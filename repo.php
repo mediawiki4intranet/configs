@@ -355,17 +355,25 @@ Supported revision control systems (vcs/method):
     {
         if (is_dir($this->cfg_dir.'/.git'))
         {
-            chdir($this->cfg_dir);
-            self::system('git pull --rebase');
-            $status = self::system('git status --porcelain -uno', true);
-            foreach (explode("\n", $status) as $line)
+            if (file_exists($this->cfg_dir.'/.git/shallow'))
             {
-                list($st, $fn) = explode(' ', trim($line));
-                if (($st == 'DD' || $st{0} == 'U' || $st{1} == 'U') &&
-                    $line !== $this->dist_name.'-index.ini')
+                // Support shallow update for configuration repository
+                self::update_git_ro(array('path' => $this->cfg_dir));
+            }
+            else
+            {
+                chdir($this->cfg_dir);
+                self::system('git pull');
+                $status = self::system('git status --porcelain -uno', true);
+                foreach (explode("\n", $status) as $line)
                 {
-                    print "There are unmerged paths, please resolve conflicts before using repo\n$status";
-                    exit(8);
+                    list($st, $fn) = explode(' ', trim($line));
+                    if (($st == 'DD' || $st{0} == 'U' || $st{1} == 'U') &&
+                        $line !== $this->dist_name.'-index.ini')
+                    {
+                        print "There are unmerged paths, please resolve conflicts before using repo\n$status";
+                        exit(8);
+                    }
                 }
             }
         }
@@ -393,8 +401,8 @@ Supported revision control systems (vcs/method):
             {
                 $updated = true;
                 $suff = $cfg['vcs'].'_'.$this->method;
-                $this->{"update_$suff"}($cfg);
-                $rev = $this->{"getrev_$suff"}($cfg);
+                self::{"update_$suff"}($cfg);
+                $rev = self::{"getrev_$suff"}($cfg);
                 $this->setrev($path, $rev);
             }
         }
@@ -482,7 +490,7 @@ Supported revision control systems (vcs/method):
      * Shallow git checkout (2 last commits, no full history)
      */
 
-    function install_git_ro($cfg)
+    static function install_git_ro($cfg)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
@@ -490,18 +498,19 @@ Supported revision control systems (vcs/method):
         return !self::system("git clone --depth 1 --single-branch --branch \"$branch\" \"$repo\" \"$dest\"");
     }
 
-    function update_git_ro($cfg)
+    static function update_git_ro($cfg)
     {
+        $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
         chdir($dest);
-        if (!self::system('git fetch --depth 1 origin master'))
+        if (!self::system("git fetch --depth 1 origin \"$branch\""))
         {
             return !self::system('git reset --hard FETCH_HEAD');
         }
         return false;
     }
 
-    function getrev_git_ro($cfg)
+    static function getrev_git_ro($cfg)
     {
         $dest = $cfg['path'];
         return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true));
@@ -511,22 +520,22 @@ Supported revision control systems (vcs/method):
      * Normal git checkout - with full history
      */
 
-    function install_git_rw($cfg)
+    static function install_git_rw($cfg)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
-        return !system("git clone --branch \"$branch\" \"$repo\" \"$dest\"");
+        return !self::system("git clone --branch \"$branch\" \"$repo\" \"$dest\"");
     }
 
-    function update_git_rw($cfg)
+    static function update_git_rw($cfg)
     {
         $dest = $cfg['path'];
         chdir($dest);
-        return !system("git pull origin");
+        return !self::system("git pull origin");
     }
 
-    function getrev_git_rw($cfg)
+    static function getrev_git_rw($cfg)
     {
         $dest = $cfg['path'];
         return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true));
