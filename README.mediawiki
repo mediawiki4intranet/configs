@@ -1,0 +1,154 @@
+You may also read this page at:
+* http://wiki.4intra.net/Mediawiki4Intranet (Russian)
+* http://wiki.4intra.net/Mediawiki4Intranet/en (English)
+
+== Mediawiki4Intranet ==
+
+Mediawiki4Intranet is a MediaWiki distribution containing many
+extensions and patches useful for intranet (and not only for
+intranet) usage. It is also important that mostly all of these
+extensions are improved and tested to work together — integration
+bugs are fixed and some new features are added.
+
+== System Requirements ==
+
+Minimal requirements:
+* PHP 5.2 or later.
+* Web server. The simplest is to use Apache, nginx with php_fpm also works, IIS and others are also supported in theory.
+* MySQL DBMS version 5 or later.
+* UNIX-like system is preferred.
+
+PHP extensions:
+* php5-mysql or php5-mysqli for interaction with the database.
+* php5-gd for images.
+* php5-curl for uploading files via URL.
+
+PHP configuration (php.ini):
+* <tt>error_reporting = E_ALL & ~E_NOTICE</tt>
+* If your PHP is &lt; 5.3: <tt>short_open_tag = Off</tt>
+* <tt>magic_quotes_gpc = Off</tt> (should be Off on every web server which respects itself)
+* For [http://supa.sourceforge.net SUPA] screenshot upload: either ''disabled'' [http://www.hardened-php.net/suhosin/ Suhosin], or {{Cmd|1=suhosin.post.max_value_length = 8000000}} and {{Cmd|1=suhosin.request.max_value_length = 8000000}}. 8000000 is an example, you can set a bigger value.
+
+Optional PHP extensions:
+* PHP opcode cacher, like APC or XCache for overall performance.
+* [http://wiki.4intra.net/Mediawiki4Intranet#php5-fss php5-fss] for faster string operations.
+* Mail and Net_SMTP PEAR packages for e-mail.
+
+Many of third-party software is also required for different extensions to work,
+but GNU/Linux users may usually 'apt-get' them, and Windows users may use our
+standalone bundle (see below).
+
+* PDF: [http://pages.cs.wisc.edu/~ghost/ GhostScript], [http://poppler.freedesktop.org/ Poppler] — former [http://www.foolabs.com/xpdf/ Xpdf] ([http://gnuwin32.sourceforge.net/packages/xpdf.htm windows)]
+* DJVU: [http://djvu.sourceforge.net/ djvulibre], [http://netpbm.sourceforge.net/ netpbm] ([http://gnuwin32.sourceforge.net/packages/netpbm.htm windows]).
+* LaTeX (for &lt;m>…&lt;/m>): a TeX distribution, [http://www.tug.org/texlive/debian.html TeXLive] in Debian, usually [http://miktex.org/ MiKTeX] on Windows.
+* [http://dvisvgm.sourceforge.net/ dvisvgm] for vector (SVG) display of math formulas.
+* [http://www.ffmpeg.org/ ffmpeg] for FLV/MP4-video ([http://ffmpeg.arrozcru.org/wiki/index.php?title=Main_Page windows builds]).
+* [http://www.graphviz.org/ Graphviz], preferably 2.27 or later.
+* [http://www.gnuplot.info/ GNUPlot].
+* [http://www.umlgraph.org/ UMLGraph].
+* [http://www.umlet.com/ UMLet].
+* [http://java.sun.com Java] for UMLGraph, UMLet, PlantUML.
+* Sphinx search: [http://sphinxsearch.com/ Sphinx].
+* zip and unzip utilities for importing and exporting file uploads (windows: [http://gnuwin32.sourceforge.net/packages/zip.htm zip], [http://gnuwin32.sourceforge.net/packages/unzip.htm unzip])
+* Modified [http://wiki.4intra.net/public/tika-app-1.2-fix-TIKA709-TIKA964.jar Apache Tika] (http://tika.apache.org/) for indexing binary file contents.
+
+If you're on Debian or Ubuntu GNU/Linux distribution, simply run:
+
+	apt-get install php5 php5-mysql php5-gd php5-curl php5-apc php-mail php-net-smtp \
+		texlive-base djvulibre-bin netpbm ghostscript poppler-utils \
+		ffmpeg graphviz gnuplot openjdk-6-jre sphinxsearch zip unzip umlet
+
+After running this apt-get, the only software which must be installed manually will be:
+* [http://dvisvgm.sourceforge.net/ dvisvgm]
+* [http://www.umlgraph.org/ UMLGraph]
+* [http://wiki.4intra.net/php5-fss php5-fss]
+* [http://wiki.4intra.net/public/tika-app-1.2-fix-TIKA709-TIKA964.jar Apache Tika]
+
+Downloaded tika-app.jar should be put to system auto-start (for example /etc/rc.local),
+with the following arguments:
+
+	java -jar tika-app-1.2-fix-TIKA709-TIKA964.jar -p 127.0.0.1:8072 -t -eutf-8
+
+== Installation ==
+
+First of all, you need to install the software listed in System Requirements.
+
+Then, clone this repository:
+
+	git clone https://github.com/mediawiki4intranet/configs.git mediawiki/configs
+
+Run repo.php to fetch the code with all extensions:
+
+	php mediawiki/configs/repo.php install mediawiki4intranet
+
+Create images subdirectory and grant web-server read-write access into it:
+
+	mkdir mediawiki/images
+	chown www-data:www-data mediawiki/images
+
+Create an empty MySQL database and user for MediaWiki:
+
+	mysql -u root -p <<EOF
+		CREATE DATABASE mediawiki;
+		GRANT ALL PRIVILEGES ON mediawiki.* TO mediawiki@localhost IDENTIFIED BY 'mediawiki';
+		FLUSH PRIVILEGES;
+	EOF
+
+Create minimal mediawiki/LocalSettings.php including predefined configuration:
+
+	<?php
+	
+	require_once 'configs/ServerSettings.php'; # use this under UNIX, or BaseSettings.php under Windows
+	
+	$wgDBname = 'mediawiki'; # database name
+	$wgDBuser = 'mediawiki'; # login and password for database user
+	$wgDBpassword = 'mediawiki';
+	$wgDBadminuser = $wgDBuser;
+	$wgDBadminpassword = $wgDBpassword;
+	$wgScriptPath = '/mediawiki';
+
+Initialise database:
+
+	cd mediawiki
+	php maintenance/patchSql.php maintenance/tables.sql
+	php maintenance/update.php
+
+Optionally configure Sphinx search (careful, do not overwrite your existing config if you have one):
+
+	cd mediawiki
+	php configs/configure.sphinx.php --style rt --this-wiki
+	mv sphinx.conf /etc/sphinxsearch
+	service sphinxsearch restart
+	cat >> LocalSettings.php <<EOF
+		
+		require_once "$IP/extensions/SphinxSearchEngine/SphinxSearchEngine.php";
+		$wgSphinxQL_index = 'wiki';
+	EOF
+	php extensions/SphinxSearchEngine/rebuild-sphinx.php
+
+At this point you're done and now have a working Mediawiki4Intranet installation,
+with all included extensions and patches.
+
+NB: If you have commit access and want to participate in development, use read-write
+installation instead of read-only:
+
+	php mediawiki/configs/repo.php install mediawiki4intranet rw
+
+You may even fork this repository, add your own extensions and create your own bundle! :)
+
+== Standalone Windows bundle ==
+
+As the simplest way to try Mediawiki4Intranet for Must-Die systems (M$ Window$) we have
+a [http://wiki.4intra.net/public/mediawiki4intranet-win.7z standalone bundle] which is
+rarely updated and may not include all the latest features, but does include all the
+software needed to run Mediawiki4Intranet.
+
+Just download it, unpack to D:\wiki4intranet\, run D:\wiki4intranet\xampp-control.exe,
+start Apache and MySQL via clicking "Start" buttons, and point your browser to
+http://localhost/wiki/.
+
+It is NOT recommended to use this bundle for production as it IS NOT properly
+and securely configured, not to speak of that it runs on a bad operating system
+made by bad company with bad policies. :)
+
+Use it only if you want to have Mediawiki4Intranet on your local machine with that OS.
