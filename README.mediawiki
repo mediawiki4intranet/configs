@@ -27,7 +27,7 @@ PHP configuration (php.ini):
 * <tt>error_reporting = E_ALL & ~E_NOTICE</tt>
 * If your PHP is &lt; 5.3: <tt>short_open_tag = Off</tt>
 * <tt>magic_quotes_gpc = Off</tt> (should be Off on every web server which respects itself)
-* For [http://supa.sourceforge.net SUPA] screenshot upload: either ''disabled'' [http://www.hardened-php.net/suhosin/ Suhosin], or {{Cmd|1=suhosin.post.max_value_length = 8000000}} and {{Cmd|1=suhosin.request.max_value_length = 8000000}}. 8000000 is an example, you can set a bigger value.
+* For [http://supa.sourceforge.net SUPA] screenshot upload: either ''disabled'' [http://www.hardened-php.net/suhosin/ Suhosin], or <tt>suhosin.post.max_value_length = 8000000</tt> and <tt>suhosin.request.max_value_length = 8000000</tt>. 8000000 is an example, you can set a bigger value.
 
 Optional PHP extensions:
 * PHP opcode cacher, like APC or XCache for overall performance.
