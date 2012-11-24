@@ -166,7 +166,7 @@ software needed to run Mediawiki4Intranet.
 
 Just download it, unpack to D:\wiki4intranet\, run D:\wiki4intranet\xampp-control.exe,
 start Apache and MySQL via clicking "Start" buttons, and point your browser to
-http://localhost/wiki/.
+http://localhost/wiki/, and login with WikiSysop/Wiki4IntraNet login/password.
 
 It is NOT recommended to use this bundle for production as it IS NOT properly
 and securely configured, not to speak of that it runs on a bad operating system
