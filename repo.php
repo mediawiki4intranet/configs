@@ -9,8 +9,7 @@
  * Repo commands:
  *
  * repo help
- * repo install <distname> [<method>] [<destdir>]
- * repo update
+ * repo update <distname> [<method>] [<destdir>]
  * repo check
  *
  * This program is free software; you can redistribute it and/or modify
@@ -90,11 +89,15 @@ class Repo
             }
         }
 
+        if ($cmd === 'install')
+        {
+            $cmd = 'update';
+        }
         if (!$cmd || $cmd === 'help')
         {
             self::printHelp();
         }
-        elseif ($cmd === 'install' || $cmd === 'check' || $cmd === 'update')
+        elseif ($cmd === 'update' || $cmd === 'check')
         {
             $repo = new Repo($dist, $method, $destdir);
             $repo->$cmd();
@@ -119,14 +122,12 @@ for faster updates.
 
 USAGE:
 
-php $s install <distname> [<method>] [<dest_dir>]
-    Install distribution <distname> using <method> (default 'ro').
+php $s update <distname> [<method>] [<dest_dir>]
+    Install/update distribution <distname> using <method> (default 'ro').
     Optionally set destination to <dest_dir> (relative to $dir).
-
-php $s update
-    Fast update: refresh configuration from repository, then update modules of
-    last installed distribution, for which revision in the local index differs
-    from revision in the distribution index.
+    Update is fast: first configuration is resreshed from the repository,
+    then modules for which revision in the local index differs
+    from revision in the distribution index are updated.
 
 php $s check
     Slow update: update ALL modules of last installed distribution.
@@ -319,31 +320,14 @@ Supported revision control systems (vcs/method):
      */
     function setrev($path, $rev)
     {
-        if ($rev && !isset($this->distindex[$path]) || $this->distindex[$path] !== $rev)
+        if ($rev)
         {
-            print "$path latest version updated to $rev\n";
-            $this->distindex[$path] = $rev;
-        }
-        $this->localindex['revs'][$this->dist[$path]['path']] = $rev;
-    }
-
-    /**
-     * Install all modules of current distribution
-     */
-    function install()
-    {
-        $this->refresh_config();
-        foreach ($this->dist as $path => $cfg)
-        {
-            $suff = $cfg['vcs'].'_'.$this->method;
-            $ok = $this->{"install_$suff"}($cfg);
-            $rev = $this->{"getrev_$suff"}($cfg);
-            if (!$ok && !$rev)
+            if (!isset($this->distindex[$path]) || $this->distindex[$path] !== $rev)
             {
-                print "Failed to clone $path, exiting\n";
-                exit(6);
+                print "$path latest version updated to $rev\n";
+                $this->distindex[$path] = $rev;
             }
-            $this->setrev($path, $rev);
+            $this->localindex['revs'][$this->dist[$path]['path']] = $rev;
         }
     }
 
@@ -397,18 +381,42 @@ Supported revision control systems (vcs/method):
         {
             if ($force ||
                 !isset($this->localindex['revs'][$cfg['path']]) ||
+                !isset($this->distindex[$path]) ||
                 $this->localindex['revs'][$cfg['path']] !== $this->distindex[$path])
             {
-                $updated = true;
                 $suff = $cfg['vcs'].'_'.$this->method;
-                self::{"update_$suff"}($cfg);
                 $rev = self::{"getrev_$suff"}($cfg);
-                $this->setrev($path, $rev);
+                $ok = true;
+                if ($force || !$rev ||
+                    !isset($this->distindex[$path]) &&
+                    $this->distindex[$path] !== $rev)
+                {
+                    $updated = true;
+                    print "$path: ";
+                    if ($rev)
+                    {
+                        $ok = self::{"update_$suff"}($cfg);
+                    }
+                    else
+                    {
+                        $ok = self::{"install_$suff"}($cfg);
+                    }
+                    $rev = self::{"getrev_$suff"}($cfg);
+                }
+                if ($ok && $rev)
+                {
+                    $this->setrev($path, $rev);
+                }
+                else
+                {
+                    print "Failed to update $path, exiting\n";
+                    exit(6);
+                }
             }
         }
         if (!$updated)
         {
-            print "Everything up-to-date\n";
+            print "Everything up-to-date.\n";
         }
     }
 
@@ -451,15 +459,28 @@ Supported revision control systems (vcs/method):
      * Similar to PHP function system(), but returns status code
      * or all output if $return_out is true, not just the last output line.
      */
-    static function system($cmd, $return_out = false)
+    static function system($cmd, $return_out = false, $ignore_err = false)
     {
-        $proc = proc_open($cmd, array(STDIN, $return_out ? array('pipe', 'w') : STDOUT, STDERR), $pipes);
+        $desc = array(STDIN, $return_out ? array('pipe', 'w') : STDOUT);
+        if ($ignore_err)
+        {
+            if (strtolower(substr(php_uname(), 0, 3)) === 'win')
+            {
+                $desc[] = array('file', 'NUL', 'w');
+            }
+            else
+            {
+                $desc[] = array('file', '/dev/null', 'w');
+            }
+        }
+        $proc = proc_open($cmd, $desc, $pipes);
         $st = proc_get_status($proc);
         $pid = $st['pid'];
         $status = 0;
         if ($return_out)
         {
             $contents = stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
         }
         if ($pid)
         {
@@ -495,7 +516,15 @@ Supported revision control systems (vcs/method):
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
-        return !self::system("git clone --depth 1 --single-branch --branch \"$branch\" \"$repo\" \"$dest\"");
+        $args = " --depth 1 --single-branch --branch \"$branch\" \"$repo\"";
+        if (file_exists($dest))
+        {
+            chdir($dest);
+            return !self::system("git clone --bare $args \"$dest/.git\"") &&
+                !self::system("git config core.bare false") &&
+                !self::system("git reset --hard \"$branch\"");
+        }
+        return !self::system("git clone $args \"$dest\"");
     }
 
     static function update_git_ro($cfg)
@@ -513,7 +542,7 @@ Supported revision control systems (vcs/method):
     static function getrev_git_ro($cfg)
     {
         $dest = $cfg['path'];
-        return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true));
+        return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true, true));
     }
 
     /**
@@ -525,20 +554,32 @@ Supported revision control systems (vcs/method):
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
-        return !self::system("git clone --branch \"$branch\" \"$repo\" \"$dest\"");
+        $args = " --branch \"$branch\" \"$repo\"";
+        if (file_exists($dest))
+        {
+            chdir($dest);
+            return !self::system("git clone --bare $args \"$dest/.git\"") &&
+                !self::system("git config core.bare false") &&
+                !self::system("git reset --hard \"$branch\"");
+        }
+        return !self::system("git clone $args \"$dest\"");
     }
 
     static function update_git_rw($cfg)
     {
         $dest = $cfg['path'];
         chdir($dest);
+        if (file_exists("$dest/.git/shallow"))
+        {
+            return !self::system("git pull --depth 1000000000 origin");
+        }
         return !self::system("git pull origin");
     }
 
     static function getrev_git_rw($cfg)
     {
         $dest = $cfg['path'];
-        return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true));
+        return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true, true));
     }
 }
 
