@@ -235,8 +235,8 @@ if (wfIsWindows())
 
 $wgCookieExpiration = 3650 * 86400;
 
-$wgLogo    = "$wgScriptPath/custisinstall/logos/wiki4intranet-logo.png";
-$wgFavicon = "$wgScriptPath/custisinstall/favicons/wiki4intranet.ico";
+$wgLogo    = "$wgScriptPath/configs/logos/wiki4intranet-logo.png";
+$wgFavicon = "$wgScriptPath/configs/favicons/wiki4intranet.ico";
 
 $wgDebugLogFile = false;
 
