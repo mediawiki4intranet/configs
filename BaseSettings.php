@@ -115,7 +115,7 @@ require_once($IP.'/extensions/BatchEditor/BatchEditor.php');
 require_once($IP.'/extensions/MarkupBabel/MarkupBabel.php');
 require_once($IP.'/extensions/CategoryTemplate/CategoryTemplate.php');
 require_once($IP.'/extensions/DeleteBatch/DeleteBatch.php');
-require_once($IP.'/extensions/FullLocalImage.php');
+require_once($IP.'/extensions/FullLocalImage/FullLocalImage.php');
 
 require_once($IP.'/extensions/SVGEdit/SVGEdit.php');
 
