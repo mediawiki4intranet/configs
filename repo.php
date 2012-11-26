@@ -144,7 +144,7 @@ Supported revision control systems (vcs/method):
     function __construct($dist_name, $method = false, $destdir = false)
     {
         $this->dist_name = $dist_name;
-        $this->method = $method ?: 'ro';
+        $this->method = $method;
         $this->cfg_dir = dirname(__FILE__);
         $this->dest_dir = $destdir;
         $this->parse_localindex();
@@ -254,6 +254,17 @@ Supported revision control systems (vcs/method):
             !empty($this->localindex['params']['dest_dir']))
         {
             $this->dest_dir = $this->localindex['params']['dest_dir'];
+        }
+        if (!$this->method)
+        {
+            if (!empty($this->localindex['params']['method']))
+            {
+                $this->method = $this->localindex['params']['method'];
+            }
+            else
+            {
+                $this->method = 'ro';
+            }
         }
     }
 

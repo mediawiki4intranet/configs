@@ -133,7 +133,7 @@ Optionally configure Sphinx search (careful, do not overwrite your existing conf
 
 <pre>
 cd mediawiki
-php configs/configure.sphinx.php --style rt --this-wiki
+php configs/maintenance/configure-sphinx.php --localsettings LocalSettings.php
 mv sphinx.conf /etc/sphinxsearch
 service sphinxsearch restart
 cat >> LocalSettings.php <<EOF
