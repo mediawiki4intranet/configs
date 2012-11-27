@@ -362,12 +362,16 @@ Supported revision control systems (vcs/method):
                 $status = self::system('git status --porcelain -uno', true);
                 foreach (explode("\n", $status) as $line)
                 {
-                    list($st, $fn) = explode(' ', trim($line));
-                    if (($st == 'DD' || $st{0} == 'U' || $st{1} == 'U') &&
-                        $line !== $this->dist_name.'-index.ini')
+                    $st = explode(' ', trim($line));
+                    if (count($st) > 1)
                     {
-                        print "There are unmerged paths, please resolve conflicts before using repo\n$status";
-                        exit(8);
+                        list($st, $fn) = $st;
+                        if (($st == 'DD' || substr($st, 0, 1) == 'U' || substr($st, 1, 1) == 'U') &&
+                            $line !== $this->dist_name.'-index.ini')
+                        {
+                            print "There are unmerged paths, please resolve conflicts before using repo\n$status";
+                            exit(8);
+                        }
                     }
                 }
             }
@@ -396,7 +400,8 @@ Supported revision control systems (vcs/method):
                 $this->localindex['revs'][$cfg['path']] !== $this->distindex[$path])
             {
                 $suff = $cfg['vcs'].'_'.$this->method;
-                $rev = self::{"getrev_$suff"}($cfg);
+                $m = "getrev_$suff";
+                $rev = self::$m($cfg);
                 $ok = true;
                 if ($force || !$rev ||
                     !isset($this->distindex[$path]) &&
@@ -406,13 +411,15 @@ Supported revision control systems (vcs/method):
                     print "$path: ";
                     if ($rev)
                     {
-                        $ok = self::{"update_$suff"}($cfg);
+                        $m = "update_$suff";
                     }
                     else
                     {
-                        $ok = self::{"install_$suff"}($cfg);
+                        $m = "install_$suff";
                     }
-                    $rev = self::{"getrev_$suff"}($cfg);
+                    $ok = self::$m($cfg);
+                    $m = "getrev_$suff";
+                    $rev = self::$m($cfg);
                 }
                 if ($ok && $rev)
                 {
