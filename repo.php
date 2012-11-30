@@ -32,13 +32,14 @@ declare(ticks = 1);
 
 function sigexit()
 {
+    JobControl::seek_to(JobControl::$maxPos);
     exit;
 }
 pcntl_signal(SIGINT, 'sigexit');
 pcntl_signal(SIGTERM, 'sigexit');
 
 Repo::run($argv);
-exit;
+sigexit();
 
 class Repo
 {
@@ -335,7 +336,7 @@ Supported revision control systems (vcs/method):
         {
             if (!isset($this->distindex[$path]) || $this->distindex[$path] !== $rev)
             {
-                print "$path latest version updated to $rev\n";
+                JobControl::print_line_for($path, "$path latest version updated to $rev");
                 $this->distindex[$path] = $rev;
             }
             $this->localindex['revs'][$this->dist[$path]['path']] = $rev;
@@ -352,14 +353,15 @@ Supported revision control systems (vcs/method):
         {
             if (file_exists($this->cfg_dir.'/.git/shallow'))
             {
-                // Support shallow update for configuration repository
+                // Shallow update of configuration repository
                 self::update_git_ro(array('path' => $this->cfg_dir));
             }
             else
             {
+                // Pull to configuration repository and check for conflicts
                 chdir($this->cfg_dir);
-                self::system('git pull');
-                $status = self::system('git status --porcelain -uno', true);
+                JobControl::shell_exec('git pull');
+                $status = JobControl::shell_exec('git status --porcelain -uno');
                 foreach (explode("\n", $status) as $line)
                 {
                     $st = explode(' ', trim($line));
@@ -390,6 +392,7 @@ Supported revision control systems (vcs/method):
      */
     function update($force = false)
     {
+        JobControl::init(10);
         $this->refresh_config();
         $updated = false;
         foreach ($this->dist as $path => $cfg)
@@ -402,13 +405,16 @@ Supported revision control systems (vcs/method):
                 $suff = $cfg['vcs'].'_'.$this->method;
                 $m = "getrev_$suff";
                 $rev = self::$m($cfg);
-                $ok = true;
                 if ($force || !$rev ||
                     !isset($this->distindex[$path]) &&
                     $this->distindex[$path] !== $rev)
                 {
                     $updated = true;
-                    print "$path: ";
+                    $cb = function() use($suff, $path, $cfg) {
+                        $m = "getrev_$suff";
+                        $rev = self::$m($cfg);
+                        $this->setrev($path, $rev);
+                    };
                     if ($rev)
                     {
                         $m = "update_$suff";
@@ -417,20 +423,13 @@ Supported revision control systems (vcs/method):
                     {
                         $m = "install_$suff";
                     }
-                    $ok = self::$m($cfg);
-                    $m = "getrev_$suff";
-                    $rev = self::$m($cfg);
-                }
-                if ($ok && $rev)
-                {
-                    $this->setrev($path, $rev);
-                }
-                else
-                {
-                    print "Failed to update $path, exiting\n";
-                    exit(6);
+                    self::$m($cfg, $cb, $path);
                 }
             }
+            JobControl::do_input();
+        }
+        while (JobControl::do_input())
+        {
         }
         if (!$updated)
         {
@@ -474,46 +473,6 @@ Supported revision control systems (vcs/method):
     }
 
     /**
-     * Similar to PHP function system(), but returns status code
-     * or all output if $return_out is true, not just the last output line.
-     */
-    static function system($cmd, $return_out = false, $ignore_err = false)
-    {
-        $desc = array(STDIN, $return_out ? array('pipe', 'w') : STDOUT);
-        if ($ignore_err)
-        {
-            if (strtolower(substr(php_uname(), 0, 3)) === 'win')
-            {
-                $desc[] = array('file', 'NUL', 'w');
-            }
-            else
-            {
-                $desc[] = array('file', '/dev/null', 'w');
-            }
-        }
-        $proc = proc_open($cmd, $desc, $pipes);
-        $st = proc_get_status($proc);
-        $pid = $st['pid'];
-        $status = 0;
-        if ($return_out)
-        {
-            $contents = stream_get_contents($pipes[1]);
-            fclose($pipes[1]);
-        }
-        if ($pid)
-        {
-            while (pcntl_waitpid($pid, $status) != $pid) {}
-            $status = pcntl_wexitstatus($status);
-        }
-        proc_close($proc);
-        if ($return_out)
-        {
-            return $status ? false : $contents;
-        }
-        return $status;
-    }
-
-    /**
      * Version control system support functions.
      * For each VCS+method, three functions must be defined:
      *
@@ -529,7 +488,7 @@ Supported revision control systems (vcs/method):
      * Shallow git checkout (2 last commits, no full history)
      */
 
-    static function install_git_ro($cfg)
+    static function install_git_ro($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
@@ -537,37 +496,39 @@ Supported revision control systems (vcs/method):
         $args = " --depth 1 --single-branch --branch \"$branch\" \"$repo\"";
         if (file_exists($dest))
         {
-            chdir($dest);
-            return !self::system("git clone --bare $args \"$dest/.git\"") &&
-                !self::system("git config core.bare false") &&
-                !self::system("git reset --hard \"$branch\"");
+            // FIXME: set up refs during bare clone
+            JobControl::spawn("git clone --progress --bare $args \"$dest/.git\"", function() {
+                JobControl::spawn("git --git-dir=\"$dest/.git\" config core.bare false", function() {
+                    JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"", $cb, $name);
+                        }, $name);
+                }, $name);
         }
-        return !self::system("git clone $args \"$dest\"");
+        else
+        {
+            JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
+        }
     }
 
-    static function update_git_ro($cfg)
+    static function update_git_ro($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
-        chdir($dest);
-        if (!self::system("git fetch --depth 1 origin \"$branch\""))
-        {
-            return !self::system('git reset --hard FETCH_HEAD');
-        }
-        return false;
+        JobControl::spawn("git --git-dir=\"$dest/.git\" fetch --depth 1 origin \"$branch\"", function() {
+            JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard FETCH_HEAD", $cb, $name);
+        }, $name);
     }
 
     static function getrev_git_ro($cfg)
     {
         $dest = $cfg['path'];
-        return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true, true));
+        return trim(JobControl::shell_exec("git --git-dir \"$dest/.git\" rev-parse HEAD"));
     }
 
     /**
      * Normal git checkout - with full history
      */
 
-    static function install_git_rw($cfg)
+    static function install_git_rw($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
@@ -575,29 +536,203 @@ Supported revision control systems (vcs/method):
         $args = " --branch \"$branch\" \"$repo\"";
         if (file_exists($dest))
         {
-            chdir($dest);
-            return !self::system("git clone --bare $args \"$dest/.git\"") &&
-                !self::system("git config core.bare false") &&
-                !self::system("git reset --hard \"$branch\"");
+            // FIXME: set up refs during bare clone
+            JobControl::spawn("git clone --progress --bare $args \"$dest/.git\"", function() {
+                JobControl::spawn("git --git-dir=\"$dest/.git\" config core.bare false", function() {
+                    JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"", $cb, $name);
+                        }, $name);
+                }, $name);
         }
-        return !self::system("git clone $args \"$dest\"");
+        else
+        {
+            JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
+        }
     }
 
-    static function update_git_rw($cfg)
+    static function update_git_rw($cfg, $cb, $name)
     {
         $dest = $cfg['path'];
-        chdir($dest);
         if (file_exists("$dest/.git/shallow"))
         {
-            return !self::system("git pull --depth 1000000000 origin");
+            // Deepen a shallow clone
+            JobControl::spawn("git --git-dir=\"$dest/.git\" pull --depth 1000000000 origin", $cb, $name);
         }
-        return !self::system("git pull origin");
+        else
+        {
+            // Normal update
+            JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull origin", $cb, $name);
+        }
     }
 
     static function getrev_git_rw($cfg)
     {
         $dest = $cfg['path'];
-        return trim(self::system("git --git-dir \"$dest/.git\" rev-parse HEAD", true, true));
+        return trim(JobControl::shell_exec("git --git-dir \"$dest/.git\" rev-parse HEAD"));
+    }
+}
+
+/**
+ * Allows to run commands in parallel and print their output simultaneously
+ * on different lines using escape sequences for cursor movement
+ */
+class JobControl
+{
+    static $childProcs = array();
+    static $parallel = 1;
+    static $queue = array();
+    static $maxPos = 0, $curPos = 0, $positions = array();
+
+    static function init($parallel = 1)
+    {
+        self::$parallel = $parallel;
+        if (self::$parallel < 2)
+        {
+            print "Job control is disabled, commands will be run in sequence\n";
+        }
+        elseif (strtolower(substr(php_uname(), 0, 3)) === 'win' ||
+            !function_exists('pcntl_waitpid'))
+        {
+            print "Job control is unavailable, commands will be run in sequence\n";
+            self::$parallel = 1;
+        }
+    }
+
+    static function reap_children()
+    {
+        // Reap finished children
+        while (($pid = pcntl_waitpid(-1, $st, WNOHANG)) > 0)
+        {
+            $code = pcntl_wexitstatus($st);
+            if (!empty(self::$childProcs[$pid]))
+            {
+                $cb = self::$childProcs[$pid]['cb'];
+                if ($cb)
+                {
+                    $cb($code);
+                }
+                proc_close(self::$childProcs[$pid]['proc']);
+                unset(self::$childProcs[$pid]);
+            }
+        }
+        // Spawn queued processes
+        while (self::$queue && count(self::$childProcs) < self::$parallel)
+        {
+            call_user_func_array(__CLASS__.'::spawn', array_shift(self::$queue));
+        }
+    }
+
+    /**
+     * Just a synchronous shell_exec which ignores STDERR and returns full STDOUT contents
+     */
+    static function shell_exec($cmd)
+    {
+        $desc = array(STDIN, array('pipe', 'w'), array('file', '/dev/null', 'w'));
+        $proc = proc_open($cmd, $desc, $pipes);
+        $contents = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        self::reap_children();
+        return $contents;
+    }
+
+    /**
+     * Spawn or enqueue a new child process
+     */
+    static function spawn($cmd, $callback = false, $name = '')
+    {
+        if (self::$parallel < 2 || !$callback)
+        {
+            if ($name !== '')
+            {
+                print "$name: \n";
+            }
+            exec($cmd, $output, $st);
+            if ($callback)
+            {
+                $callback($st);
+            }
+            return;
+        }
+        if (count(self::$childProcs) >= self::$parallel)
+        {
+            self::$queue[] = func_get_args();
+            return;
+        }
+        $proc = proc_open($cmd, array(STDIN, array('pipe', 'w'), array('pipe', 'w')), $pipes);
+        $st = proc_get_status($proc);
+        $pid = $st['pid'];
+        self::seek_to(self::$maxPos);
+        print "$name: started $pid\n";
+        self::$curPos++;
+        self::$positions[$name] = self::$maxPos++;
+        self::$childProcs[$pid] = array(
+            'proc' => $proc,
+            'cb' => $callback,
+            'out' => $pipes[1],
+            'err' => $pipes[2],
+            'name' => $name,
+        );
+    }
+
+    /**
+     * Do one iteration of JobControl main loop
+     * @return boolean false when JobControl has nothing to do anymore
+     */
+    static function do_input()
+    {
+        self::reap_children();
+        if (!self::$childProcs)
+        {
+            return false;
+        }
+        $r = $w = $x = $n = array();
+        foreach (self::$childProcs as $pid => $proc)
+        {
+            $r[] = $proc['out'];
+            $r[] = $proc['err'];
+            $n[(int)$proc['out']] = $pid;
+            $n[(int)$proc['err']] = $pid;
+        }
+        stream_select($r, $w, $x, 0);
+        foreach ($r as $desc)
+        {
+            self::input_from($desc, self::$childProcs[$n[(int)$desc]]);
+        }
+        return true;
+    }
+
+    static function print_line_for($name, $line)
+    {
+        if (!isset(self::$positions[$name]))
+        {
+            print "$name: $line\n";
+            return;
+        }
+        $line = str_replace("\n", "\r$name: ", str_replace("\r", "\r$name: ", trim($line)));
+        self::seek_to(self::$positions[$name]);
+        print "\x1B[K$name: $line";
+    }
+
+    static function seek_to($pos)
+    {
+        $mv = self::$curPos-$pos;
+        if ($mv != 0)
+        {
+            $mv = $mv > 0 ? $mv.'A' : (-$mv).'B';
+            self::$curPos = $pos;
+            print "\x1B[$mv";
+        }
+        print "\r";
+    }
+
+    static function input_from($fp, $proc)
+    {
+        $line = @fread($fp, 4096);
+        if (!$line)
+        {
+            return false;
+        }
+        self::print_line_for($proc['name'], $line);
+        return true;
     }
 }
 
