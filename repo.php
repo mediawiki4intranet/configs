@@ -496,7 +496,6 @@ Supported revision control systems (vcs/method):
         $args = " --depth 1 --single-branch --branch \"$branch\" \"$repo\"";
         if (file_exists($dest))
         {
-            // FIXME: set up refs during bare clone
             JobControl::spawn(
                 "git clone --progress --bare $args \"$dest/.git\"".
                 " && git --git-dir=\"$dest/.git\" config core.bare false".
@@ -513,8 +512,10 @@ Supported revision control systems (vcs/method):
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
-        JobControl::spawn("git --git-dir=\"$dest/.git\" fetch --depth 1 origin \"$branch\"".
-            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard FETCH_HEAD",
+        JobControl::spawn(
+            "git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
+            " && git br -f \"$branch\" FETCH_HEAD".
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
             $cb, $name);
     }
 
@@ -536,9 +537,12 @@ Supported revision control systems (vcs/method):
         $args = " --branch \"$branch\" \"$repo\"";
         if (file_exists($dest))
         {
-            // FIXME: set up refs during bare clone
-            JobControl::spawn("git clone --progress --bare $args \"$dest/.git\"".
-                " && git --git-dir=\"$dest/.git\" config core.bare false".
+            JobControl::spawn(
+                "git init --bare \"$dest/.git\"".
+                " ; git --git-dir=\"$dest/.git\" config core.bare false".
+                " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
+                " ; git --git-dir=\"$dest/.git\" fetch --progress origin \"$branch\"".
+                " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
                 " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
                 $cb, $name);
         }
@@ -554,12 +558,15 @@ Supported revision control systems (vcs/method):
         if (file_exists("$dest/.git/shallow"))
         {
             // Deepen a shallow clone
-            JobControl::spawn("git --git-dir=\"$dest/.git\" pull --depth 1000000000 origin", $cb, $name);
+            JobControl::spawn(
+                "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
+                " && git --git-dir=\"$dest/.git\" pull --progress --depth=1000000000 origin",
+                $cb, $name);
         }
         else
         {
             // Normal update
-            JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull origin", $cb, $name);
+            JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --progress origin", $cb, $name);
         }
     }
 
