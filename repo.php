@@ -497,11 +497,11 @@ Supported revision control systems (vcs/method):
         if (file_exists($dest))
         {
             // FIXME: set up refs during bare clone
-            JobControl::spawn("git clone --progress --bare $args \"$dest/.git\"", function() {
-                JobControl::spawn("git --git-dir=\"$dest/.git\" config core.bare false", function() {
-                    JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"", $cb, $name);
-                        }, $name);
-                }, $name);
+            JobControl::spawn(
+                "git clone --progress --bare $args \"$dest/.git\"".
+                " && git --git-dir=\"$dest/.git\" config core.bare false".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
+                $cb, $name);
         }
         else
         {
@@ -513,9 +513,9 @@ Supported revision control systems (vcs/method):
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
-        JobControl::spawn("git --git-dir=\"$dest/.git\" fetch --depth 1 origin \"$branch\"", function() {
-            JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard FETCH_HEAD", $cb, $name);
-        }, $name);
+        JobControl::spawn("git --git-dir=\"$dest/.git\" fetch --depth 1 origin \"$branch\"".
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard FETCH_HEAD",
+            $cb, $name);
     }
 
     static function getrev_git_ro($cfg)
@@ -537,11 +537,10 @@ Supported revision control systems (vcs/method):
         if (file_exists($dest))
         {
             // FIXME: set up refs during bare clone
-            JobControl::spawn("git clone --progress --bare $args \"$dest/.git\"", function() {
-                JobControl::spawn("git --git-dir=\"$dest/.git\" config core.bare false", function() {
-                    JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"", $cb, $name);
-                        }, $name);
-                }, $name);
+            JobControl::spawn("git clone --progress --bare $args \"$dest/.git\"".
+                " && git --git-dir=\"$dest/.git\" config core.bare false".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
+                $cb, $name);
         }
         else
         {
@@ -580,11 +579,13 @@ class JobControl
     static $childProcs = array();
     static $parallel = 1;
     static $queue = array();
-    static $maxPos = 0, $curPos = 0, $positions = array();
+    static $maxPos = 0, $curPos = 0, $positions = array(), $lastStr = array();
+    static $termLines = 0;
 
     static function init($parallel = 1)
     {
         self::$parallel = $parallel;
+        self::$termLines = getenv('LINES');
         if (self::$parallel < 2)
         {
             print "Job control is disabled, commands will be run in sequence\n";
@@ -600,6 +601,7 @@ class JobControl
     static function reap_children()
     {
         // Reap finished children
+        $stopped = 0;
         while (($pid = pcntl_waitpid(-1, $st, WNOHANG)) > 0)
         {
             $code = pcntl_wexitstatus($st);
@@ -611,7 +613,25 @@ class JobControl
                     $cb($code);
                 }
                 proc_close(self::$childProcs[$pid]['proc']);
+                $n = self::$childProcs[$pid]['name'];
+                if (!empty(self::$lastStr[$n]))
+                {
+                    self::seek_to($stopped);
+                    print "\r\x1B[K$n: ".self::$lastStr[$n];
+                    $stopped++;
+                }
+                unset(self::$positions[$n]);
                 unset(self::$childProcs[$pid]);
+            }
+        }
+        if ($stopped > 0)
+        {
+            self::$curPos = -1;
+            self::$maxPos -= $stopped;
+            foreach (self::$childProcs as $proc)
+            {
+                self::$positions[$proc['name']] = ++self::$curPos;
+                print "\n\r\x1B[K".$proc['name'].': '.@self::$lastStr[$proc['name']];
             }
         }
         // Spawn queued processes
@@ -660,12 +680,22 @@ class JobControl
         $proc = proc_open($cmd, array(STDIN, array('pipe', 'w'), array('pipe', 'w')), $pipes);
         $st = proc_get_status($proc);
         $pid = $st['pid'];
-        self::seek_to(self::$maxPos);
-        print "$name: started $pid\n";
-        self::$curPos++;
-        self::$positions[$name] = self::$maxPos++;
+        if (self::$termLines && self::$maxPos >= self::$termLines)
+        {
+            self::$positions[$name] = self::$maxPos-1;
+            self::print_line_for($name, "started $pid");
+        }
+        else
+        {
+            self::$positions[$name] = self::$maxPos++;
+            self::seek_to(self::$positions[$name]);
+            self::$lastStr[$name] = "started $pid";
+            print "$name: started $pid\n";
+            self::$curPos++;
+        }
         self::$childProcs[$pid] = array(
             'proc' => $proc,
+            'cmd' => $cmd,
             'cb' => $callback,
             'out' => $pipes[1],
             'err' => $pipes[2],
@@ -707,8 +737,9 @@ class JobControl
             print "$name: $line\n";
             return;
         }
-        $line = str_replace("\n", "\r$name: ", str_replace("\r", "\r$name: ", trim($line)));
+        $line = str_replace("\n", "\r\x1B[K$name: ", str_replace("\r", "\r\x1B[K$name: ", trim($line)));
         self::seek_to(self::$positions[$name]);
+        self::$lastStr[$name] = $line;
         print "\x1B[K$name: $line";
     }
 
