@@ -568,12 +568,12 @@ Supported revision control systems (vcs/method):
     static function update_git_rw($cfg, $cb, $name)
     {
         $dest = $cfg['path'];
+        $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         if (file_exists("$dest/.git/shallow"))
         {
             // Upgrade readonly checkout to a readwrite one,
             // i.e. change URL and deepen the shallow clone
             $repo = $cfg['repo'];
-            $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
             JobControl::spawn(
                 "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
                 " ; git --git-dir=\"$dest/.git\" config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
@@ -585,7 +585,10 @@ Supported revision control systems (vcs/method):
         else
         {
             // Normal update
-            JobControl::spawn("git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --progress origin", $cb, $name);
+            JobControl::spawn(
+                "git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --progress origin".
+                "; git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout \"$branch\"",
+                $cb, $name);
         }
     }
 
