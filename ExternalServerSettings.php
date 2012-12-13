@@ -3,7 +3,7 @@
 // MediaWiki4Intranet configuration base for external (WWW) installations
 // (c) Stas Fomin, Vitaliy Filippov 2008-2012
 
-require_once("ServerSettings.php");
+require_once(dirname(__FILE__).'ServerSettings.php');
 
 $wgScriptPath = '';
 $wgUsePathInfo = true;
