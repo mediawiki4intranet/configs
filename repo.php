@@ -378,13 +378,16 @@ Supported revision control systems (vcs/method):
                     }
                 }
             }
+            clearstatcache();
             if (filemtime(__FILE__) > $selftime)
             {
                 global $argv;
                 print __FILE__." changed, restarting\n";
                 $run = $argv;
-                array_unshift($run, $_SERVER['_']);
-                array_unshift($run, __FILE__);
+                if (substr($_SERVER['_'], -3) != 'php')
+                {
+                    array_unshift($run, $_SERVER['_']);
+                }
                 system(implode(' ', array_map('escapeshellarg', $run)));
                 exit;
             }
