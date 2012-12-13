@@ -402,17 +402,17 @@ Supported revision control systems (vcs/method):
                 $this->localindex['revs'][$cfg['path']] !== $this->distindex[$path])
             {
                 $suff = $cfg['vcs'].'_'.$this->method;
-                $m = "getrev_$suff";
-                $rev = self::$m($cfg);
+                $getrev = "getrev_$suff";
+                $rev = self::$getrev($cfg);
                 if ($force || !$rev ||
                     !isset($this->distindex[$path]) &&
                     $this->distindex[$path] !== $rev)
                 {
                     $updated = true;
-                    $cb = function() use($suff, $path, $cfg) {
-                        $m = "getrev_$suff";
-                        $rev = Repo::$m($cfg);
-                        $this->setrev($path, $rev);
+                    $self = $this;
+                    $cb = function() use($getrev, $path, $cfg, $self) {
+                        $rev = Repo::$getrev($cfg);
+                        $self->setrev($path, $rev);
                     };
                     if ($rev)
                     {
