@@ -353,7 +353,7 @@ Supported revision control systems (vcs/method):
             if (file_exists($this->cfg_dir.'/.git/shallow'))
             {
                 // Shallow update of configuration repository
-                self::update_git_ro(array('path' => $this->cfg_dir));
+                self::update_git_ro(array('path' => $this->cfg_dir), false, false);
             }
             else
             {
@@ -513,8 +513,7 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         JobControl::spawn(
             "git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
-            " && git br -f \"$branch\" FETCH_HEAD".
-            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard FETCH_HEAD",
             $cb, $name);
     }
 
@@ -674,7 +673,7 @@ class JobControl
     {
         if (self::$parallel < 2 || !$callback)
         {
-            if ($name !== '')
+            if ("$name" !== '')
             {
                 print "$name: \n";
             }
