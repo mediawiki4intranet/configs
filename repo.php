@@ -420,7 +420,7 @@ Supported revision control systems (vcs/method):
                 $getrev = "getrev_$suff";
                 $rev = self::$getrev($cfg);
                 if ($force || !$rev ||
-                    !isset($this->distindex[$path]) &&
+                    !isset($this->distindex[$path]) ||
                     $this->distindex[$path] !== $rev)
                 {
                     $updated = true;
