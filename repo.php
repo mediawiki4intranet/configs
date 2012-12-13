@@ -411,7 +411,7 @@ Supported revision control systems (vcs/method):
                     $updated = true;
                     $cb = function() use($suff, $path, $cfg) {
                         $m = "getrev_$suff";
-                        $rev = self::$m($cfg);
+                        $rev = Repo::$m($cfg);
                         $this->setrev($path, $rev);
                     };
                     if ($rev)
