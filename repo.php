@@ -8,9 +8,8 @@
  *
  * Repo commands:
  *
- * repo help
- * repo update <distname> [<method>] [<destdir>]
- * repo check
+ * php repo.php help
+ * php repo.php [install|update|check] <distname> [<method>] [<destdir>]
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -557,10 +556,16 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         if (file_exists("$dest/.git/shallow"))
         {
-            // Deepen a shallow clone
+            // Upgrade readonly checkout to a readwrite one,
+            // i.e. change URL and deepen the shallow clone
+            $repo = $cfg['repo'];
+            $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
             JobControl::spawn(
-                "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
-                " && git --git-dir=\"$dest/.git\" pull --progress --depth=1000000000 origin",
+                "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
+                " ; git --git-dir=\"$dest/.git\" config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
+                " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.remote\" origin".
+                " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.merge\" \"refs/heads/$branch\"".
+                " ; git --git-dir=\"$dest/.git\" pull --progress --depth=1000000000 origin",
                 $cb, $name);
         }
         else
@@ -631,6 +636,7 @@ class JobControl
                 unset(self::$childProcs[$pid]);
             }
         }
+        // Move lines from finished processes up
         if ($stopped > 0)
         {
             self::$curPos = -1;
