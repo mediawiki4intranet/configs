@@ -350,6 +350,8 @@ Supported revision control systems (vcs/method):
     {
         if (is_dir($this->cfg_dir.'/.git'))
         {
+            // Refresh configuration repository
+            $selftime = filemtime(__FILE__);
             if (file_exists($this->cfg_dir.'/.git/shallow'))
             {
                 // Shallow update of configuration repository
@@ -375,6 +377,16 @@ Supported revision control systems (vcs/method):
                         }
                     }
                 }
+            }
+            if (filemtime(__FILE__) > $selftime)
+            {
+                global $argv;
+                print __FILE__." changed, restarting\n";
+                $run = $argv;
+                array_unshift($run, $_SERVER['_']);
+                array_unshift($run, __FILE__);
+                system(implode(' ', array_map('escapeshellarg', $run)));
+                exit;
             }
         }
         $this->parse_config();
