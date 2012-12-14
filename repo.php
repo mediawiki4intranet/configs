@@ -97,7 +97,7 @@ class Repo
         {
             self::printHelp();
         }
-        elseif ($cmd === 'update' || $cmd === 'check')
+        elseif ($cmd === 'update' || $cmd === 'check' || $cmd == 'index')
         {
             $repo = new Repo($dist, $method, $destdir);
             $repo->$cmd();
@@ -131,6 +131,9 @@ php $s update <distname> [<method>] [<dest_dir>]
 
 php $s check
     Slow update: update ALL modules of last installed distribution.
+
+php $s index
+    Just update distindex based on currently checked out revisions.
 
 Supported revision control systems (vcs/method):
     git/ro: fast readonly clones without full history (for installation)
@@ -335,7 +338,7 @@ Supported revision control systems (vcs/method):
         {
             if (!isset($this->distindex[$path]) || $this->distindex[$path] !== $rev)
             {
-                JobControl::print_line_for($path, "$path latest version updated to $rev");
+                JobControl::print_line_for($path, "latest version updated to $rev");
                 $this->distindex[$path] = $rev;
             }
             $this->localindex['revs'][$this->dist[$path]['path']] = $rev;
@@ -392,11 +395,31 @@ Supported revision control systems (vcs/method):
                 exit;
             }
         }
+        $this->load_config();
+    }
+
+    function load_config()
+    {
         $this->parse_config();
         $this->parse_prefixes();
         $this->parse_distindex();
         $this->set_paths();
         $this->rewrite_prefixes();
+    }
+
+    function index()
+    {
+        $this->load_config();
+        foreach ($this->dist as $path => $cfg)
+        {
+            $suff = $cfg['vcs'].'_'.$this->method;
+            $getrev = "getrev_$suff";
+            $rev = self::$getrev($cfg, $path);
+            if ($rev)
+            {
+                $this->setrev($path, $rev);
+            }
+        }
     }
 
     /**
@@ -418,7 +441,7 @@ Supported revision control systems (vcs/method):
             {
                 $suff = $cfg['vcs'].'_'.$this->method;
                 $getrev = "getrev_$suff";
-                $rev = self::$getrev($cfg);
+                $rev = self::$getrev($cfg, $path);
                 if ($force || !$rev ||
                     !isset($this->distindex[$path]) ||
                     $this->distindex[$path] !== $rev)
@@ -426,7 +449,7 @@ Supported revision control systems (vcs/method):
                     $updated = true;
                     $self = $this;
                     $cb = function() use($getrev, $path, $cfg, $self) {
-                        $rev = Repo::$getrev($cfg);
+                        $rev = Repo::$getrev($cfg, $path);
                         $self->setrev($path, $rev);
                     };
                     if ($rev)
@@ -525,10 +548,9 @@ Supported revision control systems (vcs/method):
             $cb, $name);
     }
 
-    static function getrev_git_ro($cfg)
+    static function getrev_git_ro($cfg, $path)
     {
-        $dest = $cfg['path'];
-        return trim(JobControl::shell_exec("git --git-dir \"$dest/.git\" rev-parse HEAD"));
+        return self::getrev_git_rw($cfg, $path);
     }
 
     /**
@@ -586,10 +608,16 @@ Supported revision control systems (vcs/method):
         }
     }
 
-    static function getrev_git_rw($cfg)
+    static function getrev_git_rw($cfg, $path)
     {
         $dest = $cfg['path'];
-        return trim(JobControl::shell_exec("git --git-dir \"$dest/.git\" rev-parse HEAD"));
+        $r = trim(JobControl::shell_exec("git --git-dir \"$dest/.git\" rev-parse HEAD 2>&1"));
+        if (strlen($r) !== 40)
+        {
+            JobControl::print_line_for($path, $r);
+            return '';
+        }
+        return $r;
     }
 }
 
