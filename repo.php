@@ -534,7 +534,8 @@ Supported revision control systems (vcs/method):
             "git init \"$dest\"".
             " && git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
             " && git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
-            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD",
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
+            " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
             $cb, $name);
     }
 
@@ -544,7 +545,8 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         JobControl::spawn(
             "git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
-            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD",
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
+            " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
             $cb, $name);
     }
 
