@@ -572,7 +572,8 @@ Supported revision control systems (vcs/method):
                 " ; git --git-dir=\"$dest/.git\" config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
                 " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.remote\" origin".
                 " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.merge\" \"refs/heads/$branch\"".
-                " ; git --git-dir=\"$dest/.git\" pull --progress --depth=1000000000 origin",
+                " ; git --git-dir=\"$dest/.git\" fetch --progress --depth=1000000000 origin".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force \"$branch\"",
                 $cb, $name);
         }
         else
@@ -779,7 +780,7 @@ class JobControl
         print "\r";
     }
 
-    static function input_from($fp, $proc)
+    static function input_from($fp, &$proc)
     {
         $line = @fread($fp, 4096);
         if (!$line)
