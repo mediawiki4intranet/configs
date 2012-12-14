@@ -529,7 +529,21 @@ Supported revision control systems (vcs/method):
         JobControl::spawn(
             "git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard FETCH_HEAD",
-            $cb, $name);
+            function($code, $output) use($cfg, $cb, $name)
+            {
+                if (strpos($output, 'fatal: git fetch-pack: expected shallow list') !== false)
+                {
+                    // Workaround git heisenbug (or feature?) - sometimes it is unable
+                    // to fetch into shallow clones. Kill repository and re-fetch it.
+                    system("rm -rf \"$dest/.git\"");
+                    self::install_git_ro($cfg, $cb, $name);
+                }
+                else
+                {
+                    $cb();
+                }
+            },
+            $name, true);
     }
 
     static function getrev_git_ro($cfg)
@@ -580,7 +594,21 @@ Supported revision control systems (vcs/method):
                 " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.remote\" origin".
                 " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.merge\" \"refs/heads/$branch\"".
                 " ; git --git-dir=\"$dest/.git\" pull --progress --depth=1000000000 origin",
-                $cb, $name);
+                function($code, $output) use($cfg, $cb, $name)
+                {
+                    if (strpos($output, 'fatal: git fetch-pack: expected shallow list') !== false)
+                    {
+                        // Workaround git heisenbug (or feature?) - sometimes it is unable
+                        // to fetch into shallow clones. Kill repository and re-fetch it.
+                        system("rm -rf \"$dest/.git\"");
+                        self::install_git_rw($cfg, $cb, $name);
+                    }
+                    else
+                    {
+                        $cb();
+                    }
+                },
+                $name, true);
         }
         else
         {
@@ -639,7 +667,7 @@ class JobControl
                 $cb = self::$childProcs[$pid]['cb'];
                 if ($cb)
                 {
-                    $cb($code);
+                    $cb($code, self::$childProcs[$pid]['capture']);
                 }
                 proc_close(self::$childProcs[$pid]['proc']);
                 $n = self::$childProcs[$pid]['name'];
@@ -687,7 +715,7 @@ class JobControl
     /**
      * Spawn or enqueue a new child process
      */
-    static function spawn($cmd, $callback = false, $name = '')
+    static function spawn($cmd, $callback = false, $name = '', $captureOutput = false)
     {
         if (self::$parallel < 2 || !$callback)
         {
@@ -730,6 +758,7 @@ class JobControl
             'out' => $pipes[1],
             'err' => $pipes[2],
             'name' => $name,
+            'capture' => $captureOutput ? '' : false,
         );
     }
 
@@ -791,6 +820,10 @@ class JobControl
         if (!$line)
         {
             return false;
+        }
+        if ($proc['capture'] !== false)
+        {
+            $proc['capture'] .= $line;
         }
         self::print_line_for($proc['name'], $line);
         return true;
