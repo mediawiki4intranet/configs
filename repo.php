@@ -507,19 +507,12 @@ Supported revision control systems (vcs/method):
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
-        $args = " --depth 1 --single-branch --branch \"$branch\" \"$repo\"";
-        if (file_exists($dest))
-        {
-            JobControl::spawn(
-                "git clone --progress --bare $args \"$dest/.git\"".
-                " && git --git-dir=\"$dest/.git\" config core.bare false".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
-                $cb, $name);
-        }
-        else
-        {
-            JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
-        }
+        JobControl::spawn(
+            "git init \"$dest\"".
+            " && git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
+            " && git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD",
+            $cb, $name);
     }
 
     static function update_git_ro($cfg, $cb, $name)
@@ -528,22 +521,8 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         JobControl::spawn(
             "git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
-            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard FETCH_HEAD",
-            function($code, $output) use($cfg, $cb, $name)
-            {
-                if (strpos($output, 'fatal: git fetch-pack: expected shallow list') !== false)
-                {
-                    // Workaround git heisenbug (or feature?) - sometimes it is unable
-                    // to fetch into shallow clones. Kill repository and re-fetch it.
-                    system("rm -rf \"$dest/.git\"");
-                    self::install_git_ro($cfg, $cb, $name);
-                }
-                else
-                {
-                    $cb();
-                }
-            },
-            $name, true);
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD",
+            $cb, $name);
     }
 
     static function getrev_git_ro($cfg)
@@ -594,21 +573,7 @@ Supported revision control systems (vcs/method):
                 " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.remote\" origin".
                 " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.merge\" \"refs/heads/$branch\"".
                 " ; git --git-dir=\"$dest/.git\" pull --progress --depth=1000000000 origin",
-                function($code, $output) use($cfg, $cb, $name)
-                {
-                    if (strpos($output, 'fatal: git fetch-pack: expected shallow list') !== false)
-                    {
-                        // Workaround git heisenbug (or feature?) - sometimes it is unable
-                        // to fetch into shallow clones. Kill repository and re-fetch it.
-                        system("rm -rf \"$dest/.git\"");
-                        self::install_git_rw($cfg, $cb, $name);
-                    }
-                    else
-                    {
-                        $cb();
-                    }
-                },
-                $name, true);
+                $cb, $name);
         }
         else
         {
@@ -726,9 +691,9 @@ class JobControl
             exec($cmd, $output, $st);
             if ($callback)
             {
-                $callback($st);
+                $callback($st, $output);
             }
-            return;
+            return array($st, $output);
         }
         if (count(self::$childProcs) >= self::$parallel)
         {
