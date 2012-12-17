@@ -414,10 +414,15 @@ Supported revision control systems (vcs/method):
         {
             $suff = $cfg['vcs'].'_'.$this->method;
             $getrev = "getrev_$suff";
-            $rev = self::$getrev($cfg, $path);
+            $error = true;
+            $rev = self::$getrev($cfg, $error);
             if ($rev)
             {
                 $this->setrev($path, $rev);
+            }
+            else
+            {
+                JobControl::print_line_for($path, $error);
             }
         }
     }
@@ -449,7 +454,7 @@ Supported revision control systems (vcs/method):
                 }
                 else
                 {
-                    $rev = self::$getrev($cfg, $path);
+                    $rev = self::$getrev($cfg);
                     $check = !$rev || $this->distindex[$path] !== $rev;
                 }
             }
@@ -457,7 +462,7 @@ Supported revision control systems (vcs/method):
             {
                 if ($rev === NULL)
                 {
-                    $rev = self::$getrev($cfg, $path);
+                    $rev = self::$getrev($cfg);
                 }
                 $updated = true;
                 $self = $this;
@@ -465,7 +470,7 @@ Supported revision control systems (vcs/method):
                 {
                     if (!$code)
                     {
-                        $rev = Repo::$getrev($cfg, $path);
+                        $rev = Repo::$getrev($cfg);
                         $self->setrev($path, $rev);
                     }
                 };
@@ -548,7 +553,7 @@ Supported revision control systems (vcs/method):
         $repo = $cfg['repo'];
         JobControl::spawn(
             "git init \"$dest\"".
-            " && git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
+            " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
             " && git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
             " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
@@ -566,9 +571,9 @@ Supported revision control systems (vcs/method):
             $cb, $name);
     }
 
-    static function getrev_git_ro($cfg, $path)
+    static function getrev_git_ro($cfg, &$error = NULL)
     {
-        return self::getrev_git_rw($cfg, $path);
+        return self::getrev_git_rw($cfg, $error);
     }
 
     /**
@@ -648,13 +653,16 @@ Supported revision control systems (vcs/method):
         }
     }
 
-    static function getrev_git_rw($cfg, $path)
+    static function getrev_git_rw($cfg, &$error = NULL)
     {
         $dest = $cfg['path'];
         $r = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1"));
         if (strlen($r) !== 40)
         {
-            JobControl::print_line_for($path, $r);
+            if ($error)
+            {
+                $error = $r;
+            }
             return '';
         }
         return $r;
@@ -854,7 +862,8 @@ class JobControl
         $prompt = self::prompt($name);
         $line = str_replace("\n", "\r".$prompt, str_replace("\r", "\r".$prompt, trim($line)));
         self::seek_to(self::$positions[$name]);
-        self::$lastStr[$name] = $line;
+        $p = strrpos($line, "\r");
+        self::$lastStr[$name] = $p !== false ? substr($line, $p+1+strlen($prompt)) : $line;
         print $prompt.$line;
     }
 
