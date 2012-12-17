@@ -438,6 +438,7 @@ Supported revision control systems (vcs/method):
             $suff = $cfg['vcs'].'_'.$this->method;
             $getrev = "getrev_$suff";
             $check = $force || !isset($this->distindex[$path]);
+            $rev = NULL;
             if (!$check)
             {
                 // FIXME remove hardcode
@@ -454,6 +455,10 @@ Supported revision control systems (vcs/method):
             }
             if ($check)
             {
+                if ($rev === NULL)
+                {
+                    $rev = self::$getrev($cfg, $path);
+                }
                 $updated = true;
                 $self = $this;
                 $cb = function($code) use($getrev, $path, $cfg, $self)
