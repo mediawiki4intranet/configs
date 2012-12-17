@@ -435,38 +435,44 @@ Supported revision control systems (vcs/method):
         $i = 0;
         foreach ($this->dist as $path => $cfg)
         {
-            if ($force ||
-                !isset($this->localindex['revs'][$cfg['path']]) ||
-                !isset($this->distindex[$path]) ||
-                $this->localindex['revs'][$cfg['path']] !== $this->distindex[$path])
+            $suff = $cfg['vcs'].'_'.$this->method;
+            $getrev = "getrev_$suff";
+            $check = $force || !isset($this->distindex[$path]);
+            if (!$check)
             {
-                $suff = $cfg['vcs'].'_'.$this->method;
-                $getrev = "getrev_$suff";
-                $rev = self::$getrev($cfg, $path);
-                if ($force || !$rev ||
-                    !isset($this->distindex[$path]) ||
-                    $this->distindex[$path] !== $rev)
+                // FIXME remove hardcode
+                if ($this->method == 'ro')
                 {
-                    $updated = true;
-                    $self = $this;
-                    $cb = function($code) use($getrev, $path, $cfg, $self)
-                    {
-                        if (!$code)
-                        {
-                            $rev = Repo::$getrev($cfg, $path);
-                            $self->setrev($path, $rev);
-                        }
-                    };
-                    if ($rev)
-                    {
-                        $m = "update_$suff";
-                    }
-                    else
-                    {
-                        $m = "install_$suff";
-                    }
-                    self::$m($cfg, $cb, $path);
+                    $check = !isset($this->localindex['revs'][$cfg['path']]) ||
+                        $this->localindex['revs'][$cfg['path']] !== $this->distindex[$path];
                 }
+                else
+                {
+                    $rev = self::$getrev($cfg, $path);
+                    $check = !$rev || $this->distindex[$path] !== $rev;
+                }
+            }
+            if ($check)
+            {
+                $updated = true;
+                $self = $this;
+                $cb = function($code) use($getrev, $path, $cfg, $self)
+                {
+                    if (!$code)
+                    {
+                        $rev = Repo::$getrev($cfg, $path);
+                        $self->setrev($path, $rev);
+                    }
+                };
+                if ($rev)
+                {
+                    $m = "update_$suff";
+                }
+                else
+                {
+                    $m = "install_$suff";
+                }
+                self::$m($cfg, $cb, $path);
             }
             JobControl::do_input();
         }
