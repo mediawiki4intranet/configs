@@ -432,6 +432,7 @@ Supported revision control systems (vcs/method):
         JobControl::init(10);
         $this->refresh_config();
         $updated = false;
+        $i = 0;
         foreach ($this->dist as $path => $cfg)
         {
             if ($force ||
@@ -448,9 +449,13 @@ Supported revision control systems (vcs/method):
                 {
                     $updated = true;
                     $self = $this;
-                    $cb = function() use($getrev, $path, $cfg, $self) {
-                        $rev = Repo::$getrev($cfg, $path);
-                        $self->setrev($path, $rev);
+                    $cb = function($code) use($getrev, $path, $cfg, $self)
+                    {
+                        if (!$code)
+                        {
+                            $rev = Repo::$getrev($cfg, $path);
+                            $self->setrev($path, $rev);
+                        }
                     };
                     if ($rev)
                     {
@@ -600,6 +605,28 @@ Supported revision control systems (vcs/method):
                 " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force \"$branch\"",
                 $cb, $name);
         }
+        elseif ($cfg['rebase'])
+        {
+            // "Conditional rebase" for patch series (when A-B-C-D-E-F may become A-B-C-X-Y-Z)
+            // In this case if master was F and equal to origin/master, master will be just reset to Z
+            // If master was F and origin/master was E, F will be rebased on the top of Z (this means F is a new patch)
+            // If master did not contain origin/master at all, update will fail
+            $contains = JobControl::shell_exec("git --git-dir=\"$dest/.git\" branch --list --contains \"origin/$branch\" \"$branch\"");
+            if ($contains)
+            {
+                $rev = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse \"origin/$branch\""));
+                JobControl::spawn(
+                    "git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" fetch --progress origin".
+                    "&& git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"",
+                    $cb, $name);
+            }
+            else
+            {
+                JobControl::spawn(
+                    "echo Failed to update - your branch \"$branch\" has unsynced changes; exit 1",
+                    $cb, $name);
+            }
+        }
         else
         {
             // Normal update
@@ -613,7 +640,7 @@ Supported revision control systems (vcs/method):
     static function getrev_git_rw($cfg, $path)
     {
         $dest = $cfg['path'];
-        $r = trim(JobControl::shell_exec("git --git-dir \"$dest/.git\" rev-parse HEAD 2>&1"));
+        $r = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1"));
         if (strlen($r) !== 40)
         {
             JobControl::print_line_for($path, $r);
@@ -651,11 +678,11 @@ class JobControl
         }
     }
 
-    static function reap_children()
+    static function reap_children($pid = -1)
     {
         // Reap finished children
         $stopped = 0;
-        while (($pid = pcntl_waitpid(-1, $st, WNOHANG)) > 0)
+        while (($pid = pcntl_waitpid($pid, $st, WNOHANG)) > 0)
         {
             $code = pcntl_wexitstatus($st);
             if (!empty(self::$childProcs[$pid]))
@@ -670,7 +697,8 @@ class JobControl
                 if (!empty(self::$lastStr[$n]))
                 {
                     self::seek_to($stopped);
-                    print "\r\x1B[K$n: ".self::$lastStr[$n];
+                    $ok = $code ? 'color_fail' : 'color_ok';
+                    print "\r".self::prompt($n).self::$ok(self::$lastStr[$n]);
                     $stopped++;
                 }
                 unset(self::$positions[$n]);
@@ -678,14 +706,14 @@ class JobControl
             }
         }
         // Move lines from finished processes up
-        if ($stopped > 0)
+        if ($stopped > 0 && self::$parallel > 1)
         {
             self::$curPos = -1;
             self::$maxPos -= $stopped;
             foreach (self::$childProcs as $proc)
             {
                 self::$positions[$proc['name']] = ++self::$curPos;
-                print "\n\r\x1B[K".$proc['name'].': '.@self::$lastStr[$proc['name']];
+                print "\n\r".self::prompt($proc['name']).@self::$lastStr[$proc['name']];
             }
         }
         // Spawn queued processes
@@ -702,9 +730,10 @@ class JobControl
     {
         $desc = array(STDIN, array('pipe', 'w'), array('file', '/dev/null', 'w'));
         $proc = proc_open($cmd, $desc, $pipes);
+        $st = proc_get_status($proc);
         $contents = stream_get_contents($pipes[1]);
         fclose($pipes[1]);
-        self::reap_children();
+        self::reap_children($st['pid']);
         return $contents;
     }
 
@@ -720,6 +749,10 @@ class JobControl
                 print "$name: \n";
             }
             exec($cmd, $output, $st);
+            if ($output)
+            {
+                print implode("\n", $output)."\n";
+            }
             if ($callback)
             {
                 $callback($st, $output);
@@ -744,7 +777,7 @@ class JobControl
             self::$positions[$name] = self::$maxPos++;
             self::seek_to(self::$positions[$name]);
             self::$lastStr[$name] = "started $pid";
-            print "$name: started $pid\n";
+            print self::prompt($name)."started $pid\n";
             self::$curPos++;
         }
         self::$childProcs[$pid] = array(
@@ -764,7 +797,6 @@ class JobControl
      */
     static function do_input()
     {
-        self::reap_children();
         if (!self::$childProcs)
         {
             return false;
@@ -782,7 +814,23 @@ class JobControl
         {
             self::input_from($desc, self::$childProcs[$n[(int)$desc]]);
         }
+        self::reap_children();
         return true;
+    }
+
+    static function prompt($name)
+    {
+        return "\x1B[K\x1B[1;36m$name: \x1B[0;37m";
+    }
+
+    static function color_ok($text)
+    {
+        return "\x1B[1;32m$text\x1B[0;37m";
+    }
+
+    static function color_fail($text)
+    {
+        return "\x1B[1;31m$text\x1B[0;37m";
     }
 
     static function print_line_for($name, $line)
@@ -792,10 +840,11 @@ class JobControl
             print "$name: $line\n";
             return;
         }
-        $line = str_replace("\n", "\r\x1B[K$name: ", str_replace("\r", "\r\x1B[K$name: ", trim($line)));
+        $prompt = self::prompt($name);
+        $line = str_replace("\n", "\r".$prompt, str_replace("\r", "\r".$prompt, trim($line)));
         self::seek_to(self::$positions[$name]);
         self::$lastStr[$name] = $line;
-        print "\x1B[K$name: $line";
+        print $prompt.$line;
     }
 
     static function seek_to($pos)
