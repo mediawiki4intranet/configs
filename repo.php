@@ -44,11 +44,15 @@ class Repo
 {
     var $cfg_dir;
     var $prefixes_file, $prefixes = array();
-    var $dist_name, $dist = array();
+    var $dist = array();
     var $localindex_file, $localindex = array('params' => array(), 'revs' => array());
     var $distindex_file, $distindex = array();
+
+    var $dist_name;
     var $method;
     var $dest_dir;
+    var $no_refresh;
+    var $parallel = 10;
 
     static $scriptName;
 
@@ -57,10 +61,8 @@ class Repo
      */
     static function run($argv)
     {
+        $options = array();
         $cmd = '';
-        $dist = '';
-        $destdir = '';
-        $method = '';
         self::$scriptName = array_shift($argv);
 
         for ($i = 0; $i < count($argv); $i++)
@@ -71,21 +73,29 @@ class Repo
                 $cmd = 'help';
                 break;
             }
+            elseif ($arg === '-n' || $arg === '--no-refresh')
+            {
+                $options['no_refresh'] = true;
+            }
+            elseif ($arg === '-j' || $arg === '--jobs')
+            {
+                $options['parallel'] = $argv[++$i];
+            }
             elseif (!$cmd)
             {
                 $cmd = $arg;
             }
-            elseif (!$dist)
+            elseif (!isset($options['dist_name']))
             {
-                $dist = $arg;
+                $options['dist_name'] = $arg;
             }
-            elseif (!$method)
+            elseif (!isset($options['method']))
             {
-                $method = $arg;
+                $options['method'] = $arg;
             }
-            elseif (!$destdir)
+            elseif (!isset($options['dest_dir']))
             {
-                $destdir = $arg;
+                $options['dest_dir'] = $arg;
             }
         }
 
@@ -99,7 +109,7 @@ class Repo
         }
         elseif ($cmd === 'update' || $cmd === 'check' || $cmd == 'index')
         {
-            $repo = new Repo($dist, $method, $destdir);
+            $repo = new Repo($options);
             $repo->$cmd();
         }
         else
@@ -122,18 +132,25 @@ for faster updates.
 
 USAGE:
 
-php $s update <distname> [<method>] [<dest_dir>]
+php $s [OPTIONS] install|update <distname> [<method> [<dest_dir>]]
     Install/update distribution <distname> using <method> (default 'ro').
     Optionally set destination to <dest_dir> (relative to $dir).
     Update is fast: first configuration is resreshed from the repository,
     then modules for which revision in the local index differs
     from revision in the distribution index are updated.
 
-php $s check
-    Slow update: update ALL modules of last installed distribution.
+php $s [OPTIONS] check [<distname> [<method> [<dest_dir>]]]
+    Force update of all modules of last installed distribution.
 
 php $s index
-    Just update distindex based on currently checked out revisions.
+    Save currently checked out revisions into the distribution index.
+
+OPTIONS:
+
+-n or --no-refresh
+    Do not refresh configuration repository before running the command.
+-j N or --jobs N
+    Run maximum N jobs in parallel (default is 10).
 
 Supported revision control systems (vcs/method):
     git/ro: fast readonly clones without full history (for installation)
@@ -144,12 +161,16 @@ Supported revision control systems (vcs/method):
     /**
      * Constructor
      */
-    function __construct($dist_name, $method = false, $destdir = false)
+    function __construct(array $options)
     {
-        $this->dist_name = $dist_name;
-        $this->method = $method;
+        foreach (array('dist_name', 'method', 'dest_dir', 'no_refresh', 'parallel') as $k)
+        {
+            if (isset($options[$k]))
+            {
+                $this->$k = $options[$k];
+            }
+        }
         $this->cfg_dir = dirname(__FILE__);
-        $this->dest_dir = $destdir;
         $this->parse_localindex();
         if (!$this->dist_name)
         {
@@ -364,7 +385,7 @@ Supported revision control systems (vcs/method):
             {
                 // Pull to configuration repository and check for conflicts
                 chdir($this->cfg_dir);
-                JobControl::shell_exec('git pull');
+                JobControl::shell_exec('git pull && git checkout --theirs -- '.$this->dist_name.'-index.ini');
                 $status = JobControl::shell_exec('git status --porcelain -uno');
                 foreach (explode("\n", $status) as $line)
                 {
@@ -434,10 +455,16 @@ Supported revision control systems (vcs/method):
      */
     function update($force = false)
     {
-        JobControl::init(10);
-        $this->refresh_config();
+        JobControl::init($this->parallel);
+        if ($this->no_refresh)
+        {
+            $this->load_config();
+        }
+        else
+        {
+            $this->refresh_config();
+        }
         $updated = false;
-        $i = 0;
         foreach ($this->dist as $path => $cfg)
         {
             $suff = $cfg['vcs'].'_'.$this->method;
