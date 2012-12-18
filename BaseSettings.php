@@ -96,6 +96,7 @@ require_once($IP.'/extensions/Cite/Cite.php');
 require_once($IP.'/extensions/SyntaxHighlight_GeSHi/SyntaxHighlight_GeSHi.php');
 require_once($IP.'/extensions/CategoryTree/CategoryTree.php');
 $wgCategoryTreeMaxDepth = array(CT_MODE_PAGES => 100, CT_MODE_ALL => 100, CT_MODE_CATEGORIES => 100);
+require_once($IP.'/extensions/CatCatGrouping/CatCatGrouping.php');
 
 $wgSubcategorizedAlwaysExclude = array('CustisWikiToLib',
     'CustisWikiToSMWiki', 'CustisWikiToSBWiki', 'CustisWikiToRDWiki',

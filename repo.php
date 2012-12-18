@@ -10,6 +10,7 @@
  *
  * php repo.php help
  * php repo.php [install|update|check] <distname> [<method>] [<destdir>]
+ * php repo.php index
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
