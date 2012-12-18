@@ -379,14 +379,24 @@ Supported revision control systems (vcs/method):
             $selftime = filemtime(__FILE__);
             if (file_exists($this->cfg_dir.'/.git/shallow'))
             {
-                // Shallow update of configuration repository
+                // Read-only update of configuration repository
                 self::update_git_ro(array('path' => $this->cfg_dir), false, false);
             }
             else
             {
                 // Pull to configuration repository and check for conflicts
                 chdir($this->cfg_dir);
-                JobControl::shell_exec('git pull && git checkout --theirs -- '.$this->dist_name.'-index.ini');
+                $code = JobControl::spawn(
+                    'git checkout -- '.$this->dist_name.'-index.ini'.
+                    ' && git pull'.
+                    ' && git checkout --theirs -- '.$this->dist_name.'-index.ini',
+                    false, false
+                );
+                if ($code)
+                {
+                    print "You have conflicting changes in config repository, do 'git pull' manually\n";
+                    exit(9);
+                }
                 $status = JobControl::shell_exec('git status --porcelain -uno');
                 foreach (explode("\n", $status) as $line)
                 {
@@ -417,7 +427,6 @@ Supported revision control systems (vcs/method):
                 exit;
             }
         }
-        $this->load_config();
     }
 
     function load_config()
@@ -457,14 +466,11 @@ Supported revision control systems (vcs/method):
     function update($force = false)
     {
         JobControl::init($this->parallel);
-        if ($this->no_refresh)
-        {
-            $this->load_config();
-        }
-        else
+        if (!$this->no_refresh)
         {
             $this->refresh_config();
         }
+        $this->load_config();
         $updated = false;
         foreach ($this->dist as $path => $cfg)
         {
@@ -727,6 +733,7 @@ class JobControl
 
     static function reap_children($pid = -1)
     {
+        $code = 0;
         // Reap finished children
         $stopped = 0;
         while (($pid = pcntl_waitpid($pid, $st, WNOHANG)) > 0)
@@ -768,6 +775,7 @@ class JobControl
         {
             call_user_func_array(__CLASS__.'::spawn', array_shift(self::$queue));
         }
+        return $code;
     }
 
     /**
@@ -795,16 +803,12 @@ class JobControl
             {
                 print "$name: \n";
             }
-            exec($cmd, $output, $st);
-            if ($output)
-            {
-                print implode("\n", $output)."\n";
-            }
+            passthru($cmd, $st);
             if ($callback)
             {
-                $callback($st, $output);
+                $callback($st);
             }
-            return array($st, $output);
+            return $st;
         }
         if (count(self::$childProcs) >= self::$parallel)
         {
