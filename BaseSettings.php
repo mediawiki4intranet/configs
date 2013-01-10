@@ -171,8 +171,24 @@ $egDraftsAutoSaveWait = 60;   // 1 minute
 # FlvHandler
 require_once($IP.'/extensions/FlvHandler/FlvHandler.php');
 
+# SemanticMediaWiki
+if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
+{
+    require_once($IP.'/extensions/Validator/Validator.php');
+    $smwgNamespaceIndex = 120;
+    require_once($IP.'/extensions/SemanticMediaWiki/SemanticMediaWiki.php');
+    require_once($IP.'/extensions/SemanticInternalObjects/SemanticInternalObjects.php');
+
+    $wgExtensionFunctions[] = 'autoEnableSemantics';
+    function autoEnableSemantics()
+    {
+        global $wgServer;
+        enableSemantics(str_replace('www.', '', parse_url($wgServer, PHP_URL_HOST)));
+    }
+}
+
 # IntraACL
-if (!isset($egDisableIntraACL))
+if (!defined('WIKI4INTRANET_DISABLE_INTRAACL'))
 {
     require_once('extensions/IntraACL/includes/HACL_Initialize.php');
     enableIntraACL();
