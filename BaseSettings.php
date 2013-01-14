@@ -118,6 +118,13 @@ require_once($IP.'/extensions/CategoryTemplate/CategoryTemplate.php');
 require_once($IP.'/extensions/DeleteBatch/DeleteBatch.php');
 require_once($IP.'/extensions/FullLocalImage/FullLocalImage.php');
 
+// New editing toolbar: WikiEditor
+require_once($IP.'/extensions/WikiEditor/WikiEditor.php');
+$wgDefaultUserOptions['usebetatoolbar'] = 1;
+$wgDefaultUserOptions['usebetatoolbar-cgd'] = 1;
+$wgDefaultUserOptions['wikieditor-preview'] = 1;
+$wgDefaultUserOptions['wikieditor-publish'] = 1;
+
 require_once($IP.'/extensions/SVGEdit/SVGEdit.php');
 
 $wgGroupPermissions['bureaucrat']['usermerge'] = true;
