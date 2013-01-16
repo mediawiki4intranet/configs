@@ -585,10 +585,11 @@ Supported revision control systems (vcs/method):
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
+        @mkdir($dest, 0777, true);
         JobControl::spawn(
             "git init \"$dest\"".
             " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
-            " && git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
+            " ; git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
             " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
             $cb, $name);
@@ -633,6 +634,7 @@ Supported revision control systems (vcs/method):
         }
         else
         {
+            @mkdir($dest, 0777, true);
             JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
         }
     }
