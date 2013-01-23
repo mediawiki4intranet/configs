@@ -172,6 +172,11 @@ Supported revision control systems (vcs/method):
             }
         }
         $this->cfg_dir = dirname(__FILE__);
+        if ($this->dest_dir)
+        {
+            // Remember relative destination directories
+            $this->dest_dir = self::abs2rel($this->dest_dir, $this->cfg_dir);
+        }
         $this->parse_localindex();
         if (!$this->dist_name)
         {
@@ -264,6 +269,27 @@ Supported revision control systems (vcs/method):
     }
 
     /**
+     * Convert absolute path $path to one being relative to $ref_path
+     */
+    static function abs2rel($path, $ref_path)
+    {
+        $p = explode('/', realpath($path));
+        $r = explode('/', $ref_path);
+        $np = count($p);
+        $nr = count($r);
+        $i = 0;
+        while ($np > $i && $nr > $i && $p[$i] === $r[$i])
+        {
+            $i++;
+        }
+        if (!$i)
+        {
+            return $path;
+        }
+        return str_repeat('../', $nr-$i) . implode('/', array_slice($p, $i));
+    }
+
+    /**
      * Parse local index (should NOT be versioned)
      */
     function parse_localindex()
@@ -331,21 +357,22 @@ Supported revision control systems (vcs/method):
     {
         if (!$this->dest_dir && ''.$this->dest_dir !== '0')
         {
-            $this->dest_dir = $this->cfg_dir;
+            $this->dest_dir = '../';
         }
-        if (!file_exists($this->dest_dir))
+        $dest = realpath($this->dest_dir);
+        if (!file_exists($dest))
         {
-            mkdir($this->dest_dir, 0777, true);
+            mkdir($dest, 0777, true);
         }
-        if (!is_dir($this->dest_dir))
+        if (!is_dir($dest))
         {
-            print "Destination directory {$this->dest_dir} is not a directory, exiting\n";
+            print "Destination directory $dest is not a directory, exiting\n";
             exit(3);
         }
-        $this->dest_dir = realpath($this->dest_dir);
         foreach ($this->dist as $path => &$cfg)
         {
-            $cfg['path'] = $this->dest_dir.'/'.$path;
+            $cfg['path'] = $dest.'/'.$path;
+            $cfg['rel_path'] = $this->dest_dir.'/'.$path;
         }
     }
 
@@ -363,7 +390,7 @@ Supported revision control systems (vcs/method):
                 JobControl::print_line_for($path, "latest version updated to $rev");
                 $this->distindex[$path] = $rev;
             }
-            $this->localindex['revs'][$this->dist[$path]['path']] = $rev;
+            $this->localindex['revs'][$this->dist[$path]['rel_path']] = $rev;
         }
     }
 
@@ -380,7 +407,7 @@ Supported revision control systems (vcs/method):
             if (file_exists($this->cfg_dir.'/.git/shallow'))
             {
                 // Read-only update of configuration repository
-                self::update_git_ro(array('path' => $this->cfg_dir), false, false);
+                $this->update_git_ro(array('path' => $this->cfg_dir), false, false);
             }
             else
             {
@@ -446,7 +473,7 @@ Supported revision control systems (vcs/method):
             $suff = $cfg['vcs'].'_'.$this->method;
             $getrev = "getrev_$suff";
             $error = true;
-            $rev = self::$getrev($cfg, $error);
+            $rev = $this->$getrev($cfg, $error);
             if ($rev)
             {
                 $this->setrev($path, $rev);
@@ -483,12 +510,12 @@ Supported revision control systems (vcs/method):
                 // FIXME remove hardcode
                 if ($this->method == 'ro')
                 {
-                    $check = !isset($this->localindex['revs'][$cfg['path']]) ||
-                        $this->localindex['revs'][$cfg['path']] !== $this->distindex[$path];
+                    $check = !isset($this->localindex['revs'][$cfg['rel_path']]) ||
+                        $this->localindex['revs'][$cfg['rel_path']] !== $this->distindex[$path];
                 }
                 else
                 {
-                    $rev = self::$getrev($cfg);
+                    $rev = $this->$getrev($cfg);
                     $check = !$rev || $this->distindex[$path] !== $rev;
                 }
             }
@@ -496,7 +523,7 @@ Supported revision control systems (vcs/method):
             {
                 if ($rev === NULL)
                 {
-                    $rev = self::$getrev($cfg);
+                    $rev = $this->$getrev($cfg);
                 }
                 $updated = true;
                 $self = $this;
@@ -516,7 +543,7 @@ Supported revision control systems (vcs/method):
                 {
                     $m = "install_$suff";
                 }
-                self::$m($cfg, $cb, $path);
+                $this->$m($cfg, $cb, $path);
             }
             JobControl::do_input();
         }
@@ -580,7 +607,7 @@ Supported revision control systems (vcs/method):
      * Shallow git checkout (2 last commits, no full history)
      */
 
-    static function install_git_ro($cfg, $cb, $name)
+    function install_git_ro($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
@@ -595,7 +622,7 @@ Supported revision control systems (vcs/method):
             $cb, $name);
     }
 
-    static function update_git_ro($cfg, $cb, $name)
+    function update_git_ro($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $dest = $cfg['path'];
@@ -606,9 +633,9 @@ Supported revision control systems (vcs/method):
             $cb, $name);
     }
 
-    static function getrev_git_ro($cfg, &$error = NULL)
+    function getrev_git_ro($cfg, &$error = NULL)
     {
-        return self::getrev_git_rw($cfg, $error);
+        return $this->getrev_git_rw($cfg, $error);
     }
 
     /**
@@ -639,7 +666,7 @@ Supported revision control systems (vcs/method):
         }
     }
 
-    static function update_git_rw($cfg, $cb, $name)
+    function update_git_rw($cfg, $cb, $name)
     {
         $dest = $cfg['path'];
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
@@ -689,7 +716,7 @@ Supported revision control systems (vcs/method):
         }
     }
 
-    static function getrev_git_rw($cfg, &$error = NULL)
+    function getrev_git_rw($cfg, &$error = NULL)
     {
         $dest = $cfg['path'];
         $r = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1"));
