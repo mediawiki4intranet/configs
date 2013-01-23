@@ -888,13 +888,10 @@ class JobControl
 
     static function reset()
     {
-        if (self::$maxPos)
-        {
-            self::seek_to(self::$maxPos);
-            self::$maxPos = self::$curPos = 0;
-            self::$positions = array();
-            self::$lastStr = array();
-        }
+        self::seek_to(self::$maxPos);
+        self::$maxPos = self::$curPos = 0;
+        self::$positions = array();
+        self::$lastStr = array();
     }
 
     static function reap_children($pid = -1)
