@@ -86,6 +86,25 @@ $wgLanguageCode = "ru";
 $wgSMTP = false;
 $wgShowExceptionDetails = true;
 
+// Put settings (public static field changes) for autoloaded classes here
+$wgClassSettings = array();
+if (version_compare(PHP_VERSION, '5.3', '>='))
+{
+    function wfAutoloadClassSettings($class)
+    {
+        global $wgClassSettings;
+        if (isset($wgClassSettings[$class]))
+        {
+            AutoLoader::autoload($class);
+            foreach ($wgClassSettings[$class] as $name => $value)
+            {
+                $class::$$name = $value;
+            }
+        }
+    }
+    spl_autoload_register('wfAutoloadClassSettings', true, true);
+}
+
 require_once($IP.'/extensions/ParserFunctions/ParserFunctions.php');
 $wgPFStringLengthLimit = 4000;
 $wgPFEnableStringFunctions = true;
@@ -187,6 +206,7 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     require_once($IP.'/extensions/SemanticInternalObjects/SemanticInternalObjects.php');
 
     $wgExtensionFunctions[] = 'autoEnableSemantics';
+    $wgClassSettings['SMWResultPrinter']['maxRecursionDepth'] = 15;
     function autoEnableSemantics()
     {
         global $wgServer;
