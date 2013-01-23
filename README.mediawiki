@@ -178,6 +178,7 @@ Use it only if you want to have Mediawiki4Intranet on your local machine with th
 
 DEFINITELY:
 * Support export/tarball generation for the whole distribution
+* Support automatic switching between different repositories of the same module
 
 MAYBE:
 * Support putting .git repository dirs in a separate location, outside the docroot.
