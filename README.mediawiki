@@ -13,7 +13,7 @@ bugs are fixed and some new features are added.
 == System Requirements ==
 
 Minimal requirements:
-* PHP 5.2 or later.
+* PHP 5.2 or later. 5.3 or later is recommended.
 * Web server. The simplest is to use Apache, nginx with php_fpm also works, IIS and others are also supported in theory.
 * MySQL DBMS version 5 or later.
 * UNIX-like system is preferred.
