@@ -173,3 +173,15 @@ and securely configured, not to speak of that it runs on a bad operating system
 made by bad company with bad policies. :)
 
 Use it only if you want to have Mediawiki4Intranet on your local machine with that OS.
+
+== repo.php TODO ==
+
+DEFINITELY:
+* Support export/tarball generation for the whole distribution
+
+MAYBE:
+* Support putting .git repository dirs in a separate location, outside the docroot.
+* Support 'soft update' for the case of added extensions:
+** First update configs dir except *Settings.php
+** Then update the code, then update *Settings.php so missing extension files do not crash the live site.
+*: But maybe it's a bad idea just because updating the live site is a bad idea itself.
