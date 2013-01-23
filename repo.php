@@ -826,7 +826,7 @@ Supported revision control systems (vcs/method):
         {
             // Normal update
             JobControl::spawn(
-                "git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --progress origin".
+                "git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --ff-only --progress origin".
                 "; git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout \"$branch\"",
                 $cb, $name);
         }
