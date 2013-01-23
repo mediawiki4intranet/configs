@@ -535,7 +535,7 @@ Supported revision control systems (vcs/method):
                 {
                     if (!$code)
                     {
-                        $rev = Repo::$getrev($cfg);
+                        $rev = $self->$getrev($cfg);
                         $self->setrev($path, $rev);
                     }
                 };
