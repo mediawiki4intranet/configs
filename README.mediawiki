@@ -177,11 +177,10 @@ Use it only if you want to have Mediawiki4Intranet on your local machine with th
 == repo.php TODO ==
 
 DEFINITELY:
-* Support export/tarball generation for the whole distribution
+* Make readonly config update preserve branch
 * Support automatic switching between different repositories of the same module
 
 MAYBE:
-* Support putting .git repository dirs in a separate location, outside the docroot.
 * Support 'soft update' for the case of added extensions:
 ** First update configs dir except *Settings.php
 ** Then update the code, then update *Settings.php so missing extension files do not crash the live site.
