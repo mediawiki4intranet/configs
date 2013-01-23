@@ -282,11 +282,15 @@ Supported revision control systems (vcs/method):
         {
             $i++;
         }
-        if (!$i)
+        if ($i)
         {
-            return $path;
+            $path = str_repeat('../', $nr-$i) . implode('/', array_slice($p, $i));
+            if (substr($path, -1) == '/')
+            {
+                $path = substr($path, 0, -1);
+            }
         }
-        return str_repeat('../', $nr-$i) . implode('/', array_slice($p, $i));
+        return $path;
     }
 
     /**
