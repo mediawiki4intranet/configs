@@ -330,7 +330,7 @@ Supported revision control systems (vcs/method):
     static function abs2rel($path, $ref_path)
     {
         $p = explode('/', realpath($path));
-        $r = explode('/', $ref_path);
+        $r = explode('/', realpath($ref_path));
         $np = count($p);
         $nr = count($r);
         $i = 0;
@@ -634,9 +634,10 @@ Supported revision control systems (vcs/method):
      */
     function export($no_init = false)
     {
+        JobControl::reset();
+        JobControl::init(1);
         if (!$no_init)
         {
-            JobControl::init($this->parallel);
             $this->load_config();
         }
         if (!file_exists($this->export_dir))
@@ -649,17 +650,24 @@ Supported revision control systems (vcs/method):
             exit(-10);
         }
         $this->export_dir = realpath($this->export_dir);
-        $cb = function() {};
+        if (is_dir($this->cfg_dir.'/.git'))
+        {
+            $rel = self::abs2rel($this->cfg_dir, $this->dest_dir);
+            $this->export_git_rw(array(
+                'export_path' => $this->export_dir.'/'.$rel,
+                'path' => $this->cfg_dir,
+            ), false, $rel);
+        }
+        else
+        {
+            print "Error: export only works for git checked out copy, not for a tarball\n";
+            exit(-10);
+        }
         foreach ($this->dist as $path => $cfg)
         {
             $m = 'export_'.$cfg['vcs'].'_'.$this->method;
-            $this->$m($cfg, $cb, $path);
-            JobControl::do_input();
+            $this->$m($cfg, false, $path);
         }
-        while (JobControl::do_input())
-        {
-        }
-        JobControl::reset();
         print "\nClean copy ready in {$this->export_dir}.\n";
     }
 
