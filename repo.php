@@ -751,7 +751,7 @@ Supported revision control systems (vcs/method):
 
     function export_git_ro($cfg, $cb, $name)
     {
-        $this->export_git_rw($cfg, $error);
+        $this->export_git_rw($cfg, $cb, $name);
     }
 
     /**
