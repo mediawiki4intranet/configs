@@ -465,19 +465,34 @@ Supported revision control systems (vcs/method):
         {
             // Refresh configuration repository
             $selftime = filemtime(__FILE__);
+            $wc = '--work-tree="'.$this->cfg_dir.'" --git-dir="'.$this->cfg_dir.'/.git"';
             if (file_exists($this->cfg_dir.'/.git/shallow'))
             {
+                // Guess branch of configuration repository
+                $branch = 'master';
+                $rev = $this->getrev_git_rw(array('path' => $this->cfg_dir));
+                if ($rev)
+                {
+                    $s = JobControl::shell_exec("git $wc show-ref");
+                    foreach (explode("\n", $s) as $line)
+                    {
+                        if (substr($line, 0, 52) === $rev.' refs/heads/')
+                        {
+                            $branch = trim(substr($line, 52));
+                            break;
+                        }
+                    }
+                }
                 // Read-only update of configuration repository
-                $this->update_git_ro(array('path' => $this->cfg_dir), false, false);
+                $this->update_git_ro(array('path' => $this->cfg_dir, 'branch' => $branch), false, false);
             }
             else
             {
                 // Pull to configuration repository and check for conflicts
-                chdir($this->cfg_dir);
                 $code = JobControl::spawn(
-                    'git checkout -- '.$this->dist_name.'-index.ini'.
-                    ' && git pull'.
-                    ' && git checkout --theirs -- '.$this->dist_name.'-index.ini',
+                    "git $wc checkout -- {$this->dist_name}-index.ini".
+                    " && git $wc pull".
+                    " && git $wc checkout --theirs -- {$this->dist_name}-index.ini",
                     false, false
                 );
                 if ($code)
@@ -485,7 +500,7 @@ Supported revision control systems (vcs/method):
                     print "You have conflicting changes in config repository, do 'git pull' manually\n";
                     exit(9);
                 }
-                $status = JobControl::shell_exec('git status --porcelain -uno');
+                $status = JobControl::shell_exec("git $wc status --porcelain -uno");
                 foreach (explode("\n", $status) as $line)
                 {
                     $st = explode(' ', trim($line));
