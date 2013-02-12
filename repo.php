@@ -442,9 +442,8 @@ Supported revision control systems (vcs/method):
      * @param $path Path like in distribution index
      * @param $rev Revision
      */
-    function setrev($path, $rev, $cfg)
+    function setrev($path, $rev)
     {
-        $ik = $cfg['rel_path'];
         if ($rev)
         {
             if (!isset($this->distindex[$path]) || $this->distindex[$path] !== $rev)
@@ -452,9 +451,8 @@ Supported revision control systems (vcs/method):
                 JobControl::print_line_for($path, "latest version updated to $rev");
                 $this->distindex[$path] = $rev;
             }
-            $this->localindex['revs'][$ik] = $rev;
+            $this->localindex['revs'][$this->dist[$path]['rel_path']] = $rev;
         }
-        $this->localindex['repo'][$ik] = $cfg['repo'];
     }
 
     /**
@@ -554,7 +552,7 @@ Supported revision control systems (vcs/method):
             $rev = $this->$getrev($cfg, $error);
             if ($rev)
             {
-                $this->setrev($path, $rev, $cfg);
+                $this->setrev($path, $rev);
             }
             else
             {
@@ -610,7 +608,7 @@ Supported revision control systems (vcs/method):
                     if (!$code)
                     {
                         $rev = $self->$getrev($cfg);
-                        $self->setrev($path, $rev, $cfg);
+                        $self->setrev($path, $rev);
                     }
                 };
                 if ($rev)
@@ -797,9 +795,6 @@ Supported revision control systems (vcs/method):
             @mkdir($dest, 0777, true);
             JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
         }
-        // Track remote
-        $this->localindex['git_remote_origin'][$cfg['rel_path']] = $repo;
-        $this->git_set_remotes();
     }
 
     function update_git_rw($cfg, $cb, $name)
