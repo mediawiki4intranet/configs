@@ -230,7 +230,7 @@ index $wiki[name]
     charset_type    = utf-8
     charset_table   = 0..9, A..Z->a..z, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F
     blend_chars     = _, -, &, +, @, $
-    morphology      = stem_ru
+    morphology      = stem_enru
     min_word_len    = 2
 }
 
@@ -266,7 +266,7 @@ index main_$wiki[name]
     source        = src_main_$wiki[name]
     path          = /var/lib/sphinxsearch/data/main_$wiki[name]
     docinfo       = extern
-    morphology    = stem_ru
+    morphology    = stem_enru
     #stopwords    = /var/lib/sphinxsearch/data/stopwords.txt
     min_word_len  = 2
     #min_infix_len = 1
