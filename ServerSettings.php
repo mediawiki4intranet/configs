@@ -100,3 +100,5 @@ $wgMimeTypeBlacklist = array(
  
 $wgDisableUploadScriptChecks = true; 
 
+$wgMaxUploadSize = 70*1024*1024;
+
