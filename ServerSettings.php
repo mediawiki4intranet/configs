@@ -101,4 +101,6 @@ $wgMimeTypeBlacklist = array(
 $wgDisableUploadScriptChecks = true; 
 
 $wgMaxUploadSize = 70*1024*1024;
+$wgLogo = "/images/6/6f/ThisWikiLogo.png";
 
+$wgUploadPath = '/img_auth.php';
