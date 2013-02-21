@@ -752,12 +752,17 @@ Supported revision control systems (vcs/method):
 
     function update_git_ro($cfg, $cb, $name)
     {
-        $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
-        $repo = $cfg['repo'];
         $dest = $cfg['path'];
+        $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
+        $updateRepo = '';
+        if (!empty($cfg['repo']))
+        {
+            // Support call from update() function (without repo param)
+            $updateRepo = "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"".$cfg['repo']."\" && ";
+        }
         JobControl::spawn(
-            "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
-            " && git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
+            $updateRepo.
+            " git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
             " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
             $cb, $name);
