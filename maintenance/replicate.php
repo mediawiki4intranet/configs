@@ -171,6 +171,8 @@ function GET($wiki, $url)
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => $wiki['url'].$url,
+        CURLOPT_SSL_VERIFYPEER => 0,
+        CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_COOKIEFILE => $cookieJar,
         CURLOPT_COOKIEJAR => $cookieJar,
         CURLOPT_FOLLOWLOCATION => true,
@@ -193,6 +195,8 @@ function POST($wiki, $url, $params, $filename = NULL)
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => $wiki['url'].$url,
+        CURLOPT_SSL_VERIFYPEER => 0,
+        CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_COOKIEFILE => $cookieJar,
         CURLOPT_COOKIEJAR => $cookieJar,
         CURLOPT_POST => true,

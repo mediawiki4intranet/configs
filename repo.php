@@ -442,8 +442,9 @@ Supported revision control systems (vcs/method):
      * @param $path Path like in distribution index
      * @param $rev Revision
      */
-    function setrev($path, $rev)
+    function setrev($path, $rev, $cfg)
     {
+        $ik = $cfg['rel_path'];
         if ($rev)
         {
             if (!isset($this->distindex[$path]) || $this->distindex[$path] !== $rev)
@@ -451,8 +452,9 @@ Supported revision control systems (vcs/method):
                 JobControl::print_line_for($path, "latest version updated to $rev");
                 $this->distindex[$path] = $rev;
             }
-            $this->localindex['revs'][$this->dist[$path]['rel_path']] = $rev;
+            $this->localindex['revs'][$ik] = $rev;
         }
+        $this->localindex['repo'][$ik] = $cfg['repo'];
     }
 
     /**
@@ -552,7 +554,7 @@ Supported revision control systems (vcs/method):
             $rev = $this->$getrev($cfg, $error);
             if ($rev)
             {
-                $this->setrev($path, $rev);
+                $this->setrev($path, $rev, $cfg);
             }
             else
             {
@@ -608,7 +610,7 @@ Supported revision control systems (vcs/method):
                     if (!$code)
                     {
                         $rev = $self->$getrev($cfg);
-                        $self->setrev($path, $rev);
+                        $self->setrev($path, $rev, $cfg);
                     }
                 };
                 if ($rev)
@@ -751,9 +753,11 @@ Supported revision control systems (vcs/method):
     function update_git_ro($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
+        $repo = $cfg['repo'];
         $dest = $cfg['path'];
         JobControl::spawn(
-            "git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
+            "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
+            " && git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
             " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
             $cb, $name);
@@ -801,11 +805,11 @@ Supported revision control systems (vcs/method):
     {
         $dest = $cfg['path'];
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
+        $repo = $cfg['repo'];
         if (file_exists("$dest/.git/shallow"))
         {
             // Upgrade readonly checkout to a readwrite one,
             // i.e. change URL and deepen the shallow clone
-            $repo = $cfg['repo'];
             JobControl::spawn(
                 "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
                 " ; git --git-dir=\"$dest/.git\" config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
@@ -826,8 +830,9 @@ Supported revision control systems (vcs/method):
             {
                 $rev = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse \"origin/$branch\""));
                 JobControl::spawn(
-                    "git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" fetch --progress origin".
-                    "&& git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"",
+                    "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
+                    " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" fetch --progress origin".
+                    " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"",
                     $cb, $name);
             }
             else
@@ -841,8 +846,9 @@ Supported revision control systems (vcs/method):
         {
             // Normal update
             JobControl::spawn(
-                "git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --ff-only --progress origin".
-                "; git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout \"$branch\"",
+                "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --ff-only --progress origin".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout \"$branch\"",
                 $cb, $name);
         }
     }

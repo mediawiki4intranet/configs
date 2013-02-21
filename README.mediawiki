@@ -177,8 +177,7 @@ Use it only if you want to have Mediawiki4Intranet on your local machine with th
 == repo.php TODO ==
 
 DEFINITELY:
-* Support automatic switching between different repositories of the same module
-* Add remotes for additional repositories of the same module (i.e. wikimedia for our forks)
+* Set up remotes for additional repositories of the same module (i.e. wikimedia for our forks)
 
 MAYBE:
 * Support 'soft update' for the case of added extensions:
