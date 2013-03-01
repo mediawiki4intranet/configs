@@ -179,6 +179,8 @@ function GET($wiki, $url)
     if (!empty($wiki['basiclogin']) && !empty($wiki['basicpassword']))
         curl_setopt($curl, CURLOPT_USERPWD, $wiki['basiclogin'].':'.$wiki['basicpassword']);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
     $content = curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     $LastRequestDescription = "GET $wiki[url]$url = HTTP $status";
@@ -198,6 +200,8 @@ function POST($wiki, $url, $params, $filename = NULL)
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $params,
     ));
+    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
     if ($filename === NULL)
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     else
