@@ -177,6 +177,8 @@ function GET($wiki, $url)
         CURLOPT_COOKIEJAR => $cookieJar,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS => 10,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_SSL_VERIFYPEER => 0,
     ));
     if (!empty($wiki['basiclogin']) && !empty($wiki['basicpassword']))
         curl_setopt($curl, CURLOPT_USERPWD, $wiki['basiclogin'].':'.$wiki['basicpassword']);
@@ -201,6 +203,8 @@ function POST($wiki, $url, $params, $filename = NULL)
         CURLOPT_COOKIEJAR => $cookieJar,
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $params,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_SSL_VERIFYPEER => 0,
     ));
     if ($filename === NULL)
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
