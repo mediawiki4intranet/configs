@@ -277,6 +277,7 @@ function page_list($src, $cat, $notcat = '', $modifydate = '', $ignore_since_ima
     {
         $params = array(
             'catname' => $cat,
+            'closure' => 1,
             'notcategory' => $notcat,
             'modifydate' => $modifydate,
         );
