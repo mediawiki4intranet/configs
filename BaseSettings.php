@@ -192,7 +192,7 @@ require_once($IP.'/extensions/SlimboxThumbs/SlimboxThumbs.php');
 
 # Drafts
 require_once($IP.'/extensions/Drafts/Drafts.php');
-$egDraftsAutoSaveWait = 60;   // 1 minute
+$egDraftsAutoSaveWait = 30;   // half a minute
 
 # FlvHandler
 require_once($IP.'/extensions/FlvHandler/FlvHandler.php');
