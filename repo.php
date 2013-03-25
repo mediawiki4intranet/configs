@@ -759,6 +759,14 @@ Supported revision control systems (vcs/method):
         {
             // Support call from update() function (without repo param)
             $updateRepo = "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"".$cfg['repo']."\" && ";
+            if (file_exists("$dest/.git/shallow"))
+            {
+                // Rebuild shallow commit list - without it git can emit 'did not find object for shallow XXX'
+                // error, and github-via-https:// just hangs.
+                $updateRepo .=
+                    "(git --git-dir=\"$dest/.git\" log --decorate | grep \"^commit .* (grafted)\" | cut -d ' ' -f 2 > \"$dest/.git/shallow1\") && ".
+                    "mv \"$dest/.git/shallow1\" \"$dest/.git/shallow\" &&";
+            }
         }
         JobControl::spawn(
             $updateRepo.
