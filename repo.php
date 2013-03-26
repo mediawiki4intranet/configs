@@ -838,7 +838,10 @@ Supported revision control systems (vcs/method):
             // In this case if master was F and equal to origin/master, master will be just reset to Z
             // If master was F and origin/master was E, F will be rebased on the top of Z (this means F is a new patch)
             // If master did not contain origin/master at all, update will fail
-            $contains = JobControl::shell_exec("git --git-dir=\"$dest/.git\" branch --list --contains \"origin/$branch\" \"$branch\"");
+            $contains = JobControl::shell_exec(
+                "git --git-dir=\"$dest/.git\" branch --list --contains \"origin/$branch\" \"$branch\"".
+                " ; git --git-dir=\"$dest/.git\" branch --list --contains \"$branch\" \"origin/$branch\""
+            );
             if ($contains)
             {
                 $rev = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse \"origin/$branch\""));
@@ -1057,7 +1060,7 @@ class JobControl
             $n[(int)$proc['out']] = $pid;
             $n[(int)$proc['err']] = $pid;
         }
-        stream_select($r, $w, $x, 0);
+        stream_select($r, $w, $x, 0, 500000);
         foreach ($r as $desc)
         {
             self::input_from($desc, self::$childProcs[$n[(int)$desc]]);
