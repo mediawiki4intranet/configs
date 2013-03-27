@@ -44,7 +44,6 @@ $wgGroupPermissions['sysop']['createpage'] = true;
 $wgGroupPermissions['sysop']['createtalk'] = true;
 $wgGroupPermissions['bureaucrat']['createpage'] = true;
 $wgGroupPermissions['bureaucrat']['createtalk'] = true;
-$wgAutoConfirmAge = 86400 * 4; # Four days times 86400 seconds/day
 $wgEmailConfirmToEdit = true;
 
 require_once('extensions/ListFeed/ListFeed.php');
@@ -54,3 +53,6 @@ $egListFeedFeedDir = $IP.'/rss';
 require_once('extensions/ConfirmEdit/ConfirmEdit.php');
 require_once('extensions/WikiKCaptcha/WikiKCaptcha.class.php');
 $wgCaptchaClass = 'WikiKCaptcha';
+
+// In bad cases, use the following:
+//$wgAutoConfirmAge = 86400 * 4; # User must wait 4 days after registration before editing
