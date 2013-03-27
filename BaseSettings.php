@@ -189,6 +189,7 @@ require_once($IP.'/extensions/CustomToolbox/CustomToolbox.php');
 require_once($IP.'/extensions/CustomSidebar/CustomSidebar.php');
 require_once($IP.'/extensions/FavRate/FavRate.php');
 require_once($IP.'/extensions/SlimboxThumbs/SlimboxThumbs.php');
+require_once($IP.'/extensions/Spoil/Spoil.php');
 
 # Drafts
 require_once($IP.'/extensions/Drafts/Drafts.php');
