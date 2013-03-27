@@ -52,5 +52,5 @@ $egListFeedFeedUrlPrefix = '/rss';
 $egListFeedFeedDir = $IP.'/rss';
 
 require_once('extensions/ConfirmEdit/ConfirmEdit.php');
-require_once('extensions/WikiKCaptcha/WikiKCaptcha.php');
+require_once('extensions/WikiKCaptcha/WikiKCaptcha.class.php');
 $wgCaptchaClass = 'WikiKCaptcha';
