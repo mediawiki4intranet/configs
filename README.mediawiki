@@ -180,6 +180,7 @@ DEFINITELY:
 * Set up remotes for additional repositories of the same module (i.e. wikimedia for our forks)
 
 MAYBE:
+* Support automatic calling maintenance/update.php for DB updates
 * Support 'soft update' for the case of added extensions:
 ** First update configs dir except *Settings.php
 ** Then update the code, then update *Settings.php so missing extension files do not crash the live site.
