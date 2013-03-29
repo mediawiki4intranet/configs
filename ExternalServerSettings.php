@@ -54,5 +54,7 @@ require_once('extensions/ConfirmEdit/ConfirmEdit.php');
 require_once('extensions/WikiKCaptcha/WikiKCaptcha.class.php');
 $wgCaptchaClass = 'WikiKCaptcha';
 
+require_once('extensions/SimpleAntiSpamReg/SimpleAntiSpamReg.php');
+
 // In bad cases, use the following:
 //$wgAutoConfirmAge = 86400 * 4; # User must wait 4 days after registration before editing
