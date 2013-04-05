@@ -840,7 +840,7 @@ Supported revision control systems (vcs/method):
             // If master did not contain origin/master at all, update will fail
             $contains = JobControl::shell_exec(
                 "git --git-dir=\"$dest/.git\" branch --list --contains \"origin/$branch\" \"$branch\"".
-                " ; git --git-dir=\"$dest/.git\" branch --list --contains \"$branch\" \"origin/$branch\""
+                " ; git --git-dir=\"$dest/.git\" branch --list --all --contains \"$branch\" \"origin/$branch\""
             );
             if ($contains)
             {
