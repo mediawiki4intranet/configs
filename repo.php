@@ -863,8 +863,9 @@ Supported revision control systems (vcs/method):
             // Normal update
             JobControl::spawn(
                 "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" pull --ff-only --progress origin".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout \"$branch\"",
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" fetch --progress origin".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout \"$branch\"".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" merge \"origin/$branch\"",
                 $cb, $name);
         }
     }
