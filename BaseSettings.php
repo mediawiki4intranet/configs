@@ -184,6 +184,7 @@ require_once($IP.'/extensions/SimpleForms/SimpleForms.php'); /* useful at least 
 require_once($IP.'/extensions/WhoIsWatching/WhoIsWatching.php');
 require_once($IP.'/extensions/Polls/poll.php');
 require_once($IP.'/extensions/Shortcuts/Shortcuts.php');
+require_once($IP.'/extensions/TopCategoryLinks/TopCategoryLinks.php');
 require_once($IP.'/extensions/RemoveConfidential/RemoveConfidential.php');
 require_once($IP.'/extensions/CustomToolbox/CustomToolbox.php');
 require_once($IP.'/extensions/CustomSidebar/CustomSidebar.php');
