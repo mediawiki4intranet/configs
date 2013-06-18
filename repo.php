@@ -527,7 +527,7 @@ Supported revision control systems (vcs/method):
                 global $argv;
                 print __FILE__." changed, restarting\n";
                 $run = $argv;
-                if (substr($_SERVER['_'], -3) != 'php')
+                if (substr($_SERVER['_'], -8) != 'repo.php')
                 {
                     array_unshift($run, $_SERVER['_']);
                 }
