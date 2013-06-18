@@ -39,6 +39,9 @@ function sigexit()
 pcntl_signal(SIGINT, 'sigexit');
 pcntl_signal(SIGTERM, 'sigexit');
 
+// Reset SIGCHLD handler so we can reap children by ourselves
+pcntl_signal(SIGCHLD, function() {});
+
 Repo::run($argv);
 sigexit();
 
@@ -832,7 +835,7 @@ Supported revision control systems (vcs/method):
                 " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force \"$branch\"",
                 $cb, $name);
         }
-        elseif ($cfg['rebase'])
+        elseif (!empty($cfg['rebase']))
         {
             // "Conditional rebase" for patch series (when A-B-C-D-E-F may become A-B-C-X-Y-Z)
             // In this case if master was F and equal to origin/master, master will be just reset to Z
@@ -932,12 +935,12 @@ class JobControl
         self::$lastStr = array();
     }
 
-    static function reap_children($pid = -1)
+    static function reap_children($needpid = -1)
     {
         $code = 0;
         // Reap finished children
         $stopped = 0;
-        while (($pid = pcntl_waitpid($pid, $st, WNOHANG)) > 0)
+        while (($pid = pcntl_waitpid($needpid, $st, WNOHANG)) > 0)
         {
             $code = pcntl_wexitstatus($st);
             if (!empty(self::$childProcs[$pid]))
