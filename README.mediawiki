@@ -178,6 +178,9 @@ Use it only if you want to have Mediawiki4Intranet on your local machine with th
 
 DEFINITELY:
 * Set up remotes for additional repositories of the same module (i.e. wikimedia for our forks)
+* More flexible setup of readonly/readwrite remotes. I.e. allow to clone some repositories via
+  https and others via ssh, or allow to clone via https, but push via ssh. Maybe via the same
+  mechanism of remotes.
 
 MAYBE:
 * Support automatic calling maintenance/update.php for DB updates
