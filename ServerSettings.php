@@ -2,7 +2,6 @@
 
 // MediaWiki4Intranet configuration base for internal UNIX installations
 // (c) Stas Fomin, Vitaliy Filippov 2008-2011
-
 require_once(dirname(__FILE__).'/BaseSettings.php');
 
 $wgPageShowWatchingUsers = true;
