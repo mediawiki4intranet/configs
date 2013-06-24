@@ -36,11 +36,14 @@ function sigexit()
     JobControl::reset();
     exit;
 }
-pcntl_signal(SIGINT, 'sigexit');
-pcntl_signal(SIGTERM, 'sigexit');
 
-// Reset SIGCHLD handler so we can reap children by ourselves
-pcntl_signal(SIGCHLD, function() {});
+if (function_exists('pcntl_signal'))
+{
+    pcntl_signal(SIGINT, 'sigexit');
+    pcntl_signal(SIGTERM, 'sigexit');
+    // Reset SIGCHLD handler so we can reap children by ourselves
+    pcntl_signal(SIGCHLD, function() {});
+}
 
 Repo::run($argv);
 sigexit();
