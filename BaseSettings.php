@@ -330,9 +330,6 @@ $wgMaxImageArea = 5000*5000;
 // Allow all ?action=raw content types
 $wgAllowedRawCTypes = true;
 
-// Also display categories on the top of page
-$wgCatlinksTop = true;
-
 // Use "wikipedia-like" search box in Vector skin
 $wgDefaultUserOptions['vector-simplesearch'] = true;
 $wgVectorUseSimpleSearch = true;
