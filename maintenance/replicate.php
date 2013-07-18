@@ -55,6 +55,7 @@ Config file fragment syntax (Replace __Test__ with desired [target] name):
 [__Test__SourceWiki]
 URL=<source wiki url>
 Category=<source category name for selecting pages>
+CategoryWithClosure=<source category name for selecting pages including its subcategories>
 NotCategory=<source category name for replication denial>
 RemoveConfidential=<'yes' or 'no' (default)>
 FullHistory=<'yes' or 'no' (default), 'yes' replicates all page revisions, not only the last one>
@@ -293,52 +294,84 @@ function page_list_load($wiki, $params)
 // Retrieve list of Wiki pages from category $cat,
 // NOT in category $notcat, with all used images and
 // templates by default, but only modified after $modifydate
-function page_list($src, $cat, $notcat = '', $modifydate = '', $ignore_since_images = false)
+function page_list($src, $modifydate = '', $ignore_since_images = false)
 {
     $ignore_since_images = $ignore_since_images && $modifydate !== '';
-    $desc = "Category:$cat";
-    if ($notcat !== '')
+    $desc = '';
+    if (!empty($src['categorywithclosure']))
     {
-        $desc .= ", excluding category:$notcat";
+        $desc .= "Category:".$src['categorywithclosure']." including all subcategories";
     }
-    if ($modifydate !== '')
+    if (!empty($src['category']))
+    {
+        if ($desc)
+        {
+            $desc .= " plus ";
+        }
+        $desc .= "Category:".$src['category'];
+    }
+    if (!empty($src['notcategory']))
+    {
+        $desc .= ", excluding Category:".$src['notcategory'];
+    }
+    if ($ignore_since_images)
+    {
+        $desc .= ", with all used images/templates";
+    }
+    if (!empty($modifydate))
     {
         $desc .= ", modified after $modifydate";
     }
     if (!$ignore_since_images)
     {
-        $desc .= ", including all used images/templates";
+        $desc .= ", with all used images/templates";
     }
+    repl_log("Retrieving $desc");
     try
     {
-        $params = array(
-            'catname' => $cat,
-            'closure' => 1,
-            'notcategory' => $notcat,
+        $common = array(
             'modifydate' => $modifydate,
+            'notcategory' => @$src['notcategory'],
         );
         if (!$ignore_since_images)
         {
-            $params['templates'] = $params['images'] = $params['redirects'] = 1;
+            $common['templates'] = $common['images'] = $common['redirects'] = 1;
         }
-        $text = page_list_load($src, $params);
-        if ($text && $ignore_since_images)
+        $pages = '';
+        if (!empty($src['category']))
+        {
+            $params = $common + array(
+                'pages' => $pages,
+                'catname' => $src['category'],
+            );
+            $pages = page_list_load($src, $params);
+        }
+        if (!empty($src['categorywithclosure']))
+        {
+            $params = $common + array(
+                'pages' => $pages,
+                'catname' => $src['categorywithclosure'],
+                'closure' => 1,
+            );
+            $pages = page_list_load($src, $params);
+        }
+        if ($pages && $ignore_since_images)
         {
             // Add templates, images and redirects in a separate request, without passing modifydate
-            $text = page_list_load($src, array(
-                'notcategory' => $notcat,
+            $pages = page_list_load($src, array(
+                'pages' => $pages,
+                'notcategory' => @$src['notcategory'],
                 'templates' => 1,
                 'images' => 1,
                 'redirects' => 1,
-                'pages' => $text,
             ));
         }
     }
     catch (Exception $e)
     {
-        throw new ReplicateException("Load page list from $desc: $e");
+        throw new ReplicateException("Page list loading failed: $e");
     }
-    return $text;
+    return $pages;
 }
 
 function replicate($src, $dest)
@@ -347,12 +380,12 @@ function replicate($src, $dest)
     // Login into source wiki
     login_into($src, 'source wiki');
     // Read page list for replication
-    $text = page_list($src, $src['category'], isset($src['notcategory']) ? $src['notcategory'] : false,
-        $since_time, $ignore_since_images);
+    $text = page_list($src, $since_time, $ignore_since_images);
     if (!$text)
     {
         throw new ReplicateException("No pages need replication in source wiki");
     }
+    repl_log(substr_count($text, "\n")." pages listed");
     $ts = microtime(true);
     // Read export XML / multipart file
     $fn = tempnam(sys_get_temp_dir(), 'imp');
