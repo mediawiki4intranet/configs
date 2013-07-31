@@ -192,6 +192,7 @@ require_once($IP.'/extensions/FavRate/FavRate.php');
 require_once($IP.'/extensions/SlimboxThumbs/SlimboxThumbs.php');
 require_once($IP.'/extensions/Spoil/Spoil.php');
 require_once($IP.'/extensions/Duplicator/Duplicator.php');
+require_once($IP.'/extensions/PopupWhatlinkshere/PopupWhatlinkshere.php');
 
 # Drafts
 require_once($IP.'/extensions/Drafts/Drafts.php');
