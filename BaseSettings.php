@@ -27,6 +27,7 @@ $wgSitename         = "CustisWiki";
 ## defaults for all runtime URL paths are based off of this.
 $wgScriptPath       = "/wiki";
 $wgScriptExtension  = ".php";
+$wgUsePathInfo      = true;
 
 $wgEnableEmail      = false;
 $wgEnableUserEmail  = false;
