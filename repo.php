@@ -638,6 +638,7 @@ Supported revision control systems (vcs/method):
         {
             print "Everything up-to-date.\n";
         }
+        JobControl::print_failed_tasks();
         if ($this->export_dir)
         {
             $this->export(true);
@@ -913,6 +914,7 @@ class JobControl
     static $queue = array();
     static $maxPos = 0, $curPos = 0, $positions = array(), $lastStr = array();
     static $termLines = 0;
+    static $failedTasks = array();
 
     static function init($parallel = 1)
     {
@@ -953,6 +955,13 @@ class JobControl
                 {
                     $cb($code, self::$childProcs[$pid]['capture']);
                 }
+                if ($code)
+                {
+                    self::$failedTasks[] = array(
+                        self::$childProcs[$pid]['name'],
+                        self::$childProcs[$pid]['capture'],
+                    );
+                }
                 proc_close(self::$childProcs[$pid]['proc']);
                 $n = self::$childProcs[$pid]['name'];
                 if (!empty(self::$lastStr[$n]))
@@ -986,6 +995,21 @@ class JobControl
     }
 
     /**
+     * Print information about failed tasks
+     */
+    static function print_failed_tasks()
+    {
+        if (self::$failedTasks)
+        {
+            print "\n\n".self::color_fail(count(self::$failedTasks)." tasks failed:\n");
+            foreach (self::$failedTasks as $t)
+            {
+                print self::color_fail($t[0].': ').$t[1]."\n";
+            }
+        }
+    }
+
+    /**
      * Just a synchronous shell_exec which ignores STDERR and returns full STDOUT contents
      */
     static function shell_exec($cmd)
@@ -1002,7 +1026,7 @@ class JobControl
     /**
      * Spawn or enqueue a new child process
      */
-    static function spawn($cmd, $callback = false, $name = '', $captureOutput = false)
+    static function spawn($cmd, $callback = false, $name = '', $captureOutput = true)
     {
         if (self::$parallel < 2 || !$callback)
         {
