@@ -803,6 +803,7 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
         $args = " --branch \"$branch\" \"$repo\"";
+        $updateold = !empty($cfg['rebase']) ? " && git --git-dir=\"$dest/.git\" branch -f \"remotes/old/$branch\" \"origin/$branch\"" : '';
         if (file_exists($dest))
         {
             JobControl::spawn(
@@ -811,13 +812,14 @@ Supported revision control systems (vcs/method):
                 " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
                 " ; git --git-dir=\"$dest/.git\" fetch --progress origin \"$branch\"".
                 " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"".
+                $updateold,
                 $cb, $name);
         }
         else
         {
             @mkdir($dest, 0777, true);
-            JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
+            JobControl::spawn("git clone --progress $args \"$dest\"".$updateold, $cb, $name);
         }
     }
 
@@ -826,36 +828,45 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
         $repo = $cfg['repo'];
+        $git = "git --git-dir=\"$dest/.git\"";
         if (file_exists("$dest/.git/shallow"))
         {
             // Upgrade readonly checkout to a readwrite one,
             // i.e. change URL and deepen the shallow clone
             JobControl::spawn(
-                "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
-                " ; git --git-dir=\"$dest/.git\" config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
-                " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.remote\" origin".
-                " ; git --git-dir=\"$dest/.git\" config \"branch.$branch.merge\" \"refs/heads/$branch\"".
-                " ; git --git-dir=\"$dest/.git\" fetch --progress --depth=1000000000 origin".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force \"$branch\"",
+                "$git config --replace-all remote.origin.url \"$repo\"".
+                " ; $git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
+                " ; $git config \"branch.$branch.remote\" origin".
+                " ; $git config \"branch.$branch.merge\" \"refs/heads/$branch\"".
+                " ; $git fetch --progress --depth=1000000000 origin".
+                " && $git --work-tree=\"$dest\" checkout --force \"$branch\"",
                 $cb, $name);
         }
         elseif (!empty($cfg['rebase']))
         {
             // "Conditional rebase" for patch series (when A-B-C-D-E-F may become A-B-C-X-Y-Z)
+            // Also this mode should be always used when switching between repositories -
+            // (maybe it could be decided automatically (FIXME?))
+            //
             // In this case if master was F and equal to origin/master, master will be just reset to Z
             // If master was F and origin/master was E, F will be rebased on the top of Z (this means F is a new patch)
             // If master did not contain origin/master at all, update will fail
+            //
+            // old/$branch is saved so user interrupt won't hurt such 'rebase' updates
+            $updateold = "$git branch -f \"old/$branch\" \"origin/$branch\"";
             $contains = JobControl::shell_exec(
-                "git --git-dir=\"$dest/.git\" branch --list --contains \"origin/$branch\" \"$branch\"".
-                " ; git --git-dir=\"$dest/.git\" branch --list --all --contains \"$branch\" \"origin/$branch\""
+                "$git rev-parse \"old/$branch\" || $updateold".
+                " ; $git branch --list --contains \"old/$branch\" \"$branch\"".
+                " ; $git branch --list --all --contains \"$branch\" \"old/$branch\""
             );
             if ($contains)
             {
-                $rev = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse \"origin/$branch\""));
+                $rev = trim(JobControl::shell_exec("$git rev-parse \"old/$branch\""));
                 JobControl::spawn(
-                    "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
-                    " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" fetch --progress origin".
-                    " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"",
+                    "$git config --replace-all remote.origin.url \"$repo\"".
+                    " && $git --work-tree=\"$dest\" fetch --progress origin".
+                    " && $git --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"".
+                    " && $updateold",
                     $cb, $name);
             }
             else
@@ -869,10 +880,10 @@ Supported revision control systems (vcs/method):
         {
             // Normal update
             JobControl::spawn(
-                "git --git-dir=\"$dest/.git\" config --replace-all remote.origin.url \"$repo\"".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" fetch --progress origin".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout \"$branch\"".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" merge \"origin/$branch\"",
+                "$git config --replace-all remote.origin.url \"$repo\"".
+                " && $git --work-tree=\"$dest\" fetch --progress origin".
+                " && $git --work-tree=\"$dest\" checkout \"$branch\"".
+                " && $git --work-tree=\"$dest\" merge \"origin/$branch\"",
                 $cb, $name);
         }
     }
