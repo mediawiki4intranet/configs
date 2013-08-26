@@ -803,7 +803,7 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
         $args = " --branch \"$branch\" \"$repo\"";
-        $updateold = !empty($cfg['rebase']) ? " && git --git-dir=\"$dest/.git\" branch -f \"remotes/old/$branch\" \"origin/$branch\"" : '';
+        $updateold = !empty($cfg['rebase']) ? " && git --git-dir=\"$dest/.git\" branch --no-track -f \"remotes/old/$branch\" \"origin/$branch\"" : '';
         if (file_exists($dest))
         {
             JobControl::spawn(
@@ -853,7 +853,7 @@ Supported revision control systems (vcs/method):
             // If master did not contain origin/master at all, update will fail
             //
             // old/$branch is saved so user interrupt won't hurt such 'rebase' updates
-            $updateold = "$git branch -f \"old/$branch\" \"origin/$branch\"";
+            $updateold = "$git branch --no-track -f \"old/$branch\" \"origin/$branch\"";
             $contains = JobControl::shell_exec(
                 "$git rev-parse \"old/$branch\" || $updateold".
                 " ; $git branch --list --contains \"old/$branch\" \"$branch\"".
