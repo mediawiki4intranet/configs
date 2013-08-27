@@ -23,6 +23,7 @@ $wikis_file = false;
 $hostname = false;
 $localsettings = false;
 $style = 'rt';
+$help = false;
 
 for ($i = 1; $i < count($argv); $i++)
 {
