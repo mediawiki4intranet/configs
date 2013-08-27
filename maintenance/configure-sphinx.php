@@ -3,6 +3,7 @@
 
 /**
  * MediaWiki4Intranet Sphinx search configuration generator
+ *
  * (c) 2010+ Vitaliy Filippov, Stas Fomin
  */
 
@@ -31,7 +32,7 @@ for ($i = 1; $i < count($argv); $i++)
         $hostname = $argv[++$i];
     elseif ($argv[$i] == '--style')
         $style = $argv[++$i];
-    elseif ($argv[$i] == '--localsettings')
+    elseif ($argv[$i] == '--conf')
         $localsettings = $argv[++$i];
     elseif ($argv[$i] == '--help' || $argv[$i] == '-h')
         $help = true;
@@ -46,10 +47,16 @@ if ($style !== 'rt' && $style !== 'old')
 if (!$wikis_file && !$localsettings)
 {
     $wikis_file = dirname(__FILE__).'/sphinx.wikis.php';
+    if (!file_exists($wikis_file))
+    {
+        $wikis_file = false;
+        $localsettings = dirname(dirname(dirname(__FILE__))) . '/LocalSettings.php';
+    }
 }
+
 if (!$hostname)
 {
-    $hostname = trim(file_get_contents('/etc/hostname'));
+    $hostname = trim(`hostname 2>/dev/null`);
 }
 
 $wikis = array();
@@ -89,7 +96,7 @@ else/*if ($localsettings)*/
     }
     $wikis['name'] = 'wiki';
     $wikis = array('wiki' => $wikis);
-    print "Warning: configuring for a single wiki.\n";
+    print "Configuring for a single wiki.\n";
 }
 
 if ($help)
@@ -97,24 +104,22 @@ if ($help)
     print "MediaWiki4Intranet Sphinx Search configurator
 
 USAGE: one of
-  php configure.sphinx.php [--style rt|old] --this-wiki [--conf LocalSettings.php]
+  php configure.sphinx.php [--style rt|old] [--conf LocalSettings.php]
   php configure.sphinx.php [--style rt|old] --wikis FILE [--hostname HOSTNAME]
 
 OPTIONS:
 
---this-wiki
-  Configure for a single wiki, not for wiki family.
-
 --conf LocalSettings.php
-  Specify path to a single wiki configuration. Default is ../LocalSettings.php.
+  Specify path to a single wiki configuration. Default is ../../LocalSettings.php.
 
 --wikis sphinx.wikis.php
-  Take per-host Wiki family config from this file. Default is ./sphinx.wikis.php.
+  Configure for multiple wikis on a single host. Take per-host Wiki family config
+  from the specified file. Default is ./sphinx.wikis.php.
 
 --hostname HOSTNAME
   Print configuration for wiki family on the host HOSTNAME".($wikis ? "
   Host names: ".implode(', ', array_keys($wikis)) : '')."
-  Default host name = $hostname (taken from /etc/hostname)
+  Default host name = $hostname (taken from `hostname` command output)
 
 --style STYLE
   Configuration style. One of 'rt' (default) or 'old'.
@@ -123,7 +128,7 @@ OPTIONS:
     (http://wiki.4intra.net/SphinxSearchEngine)
   'old' uses delta index updates (http://sphinxsearch.com/docs/2.0.1/delta-updates.html),
     i.e. one \"big\" index, rebuilt every day and one \"incremental\" for pages changed in
-    the last day, rebuilt each 30 minutes or so. It works for older Sphinx and MediaWiki
+    the last day, rebuilt every 5 minutes or so. It works for older Sphinx and MediaWiki
     versions and requires SphinxSearch extension (http://www.mediawiki.org/Extension:SphinxSearch).
 
 You can take this sample sphinx.wikis.php as the base for your config:
@@ -184,7 +189,8 @@ searchd
 ';
 file_put_contents('sphinx.conf', $config);
 
-print "sphinx.conf created for host '$hostname', move it to /etc/sphinxsearch/sphinx.conf\n";
+print "sphinx.conf created".($hostname ? " for host '$hostname'" : '').
+    ", edit and move it to /etc/sphinxsearch/sphinx.conf\n";
 
 if ($style == 'old')
 {
@@ -194,7 +200,7 @@ Then add the following to /etc/crontab:
 # Sphinx search: rebuild full indexes at night
 0 3 * * *       root    /usr/bin/indexer --quiet --rotate$reindex_main
 # Sphinx search: update smaller indexes regularly
-*/30 * * * *    root    /usr/bin/indexer --quiet --rotate$reindex_inc
+*/5 * * * *    root    /usr/bin/indexer --quiet --rotate$reindex_inc
 
 ";
 }
