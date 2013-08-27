@@ -803,7 +803,6 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
         $args = " --branch \"$branch\" \"$repo\"";
-        $updateold = !empty($cfg['rebase']) ? " && git --git-dir=\"$dest/.git\" branch --no-track -f \"remotes/old/$branch\" \"origin/$branch\"" : '';
         if (file_exists($dest))
         {
             JobControl::spawn(
@@ -812,14 +811,13 @@ Supported revision control systems (vcs/method):
                 " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
                 " ; git --git-dir=\"$dest/.git\" fetch --progress origin \"$branch\"".
                 " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"".
-                $updateold,
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
                 $cb, $name);
         }
         else
         {
             @mkdir($dest, 0777, true);
-            JobControl::spawn("git clone --progress $args \"$dest\"".$updateold, $cb, $name);
+            JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
         }
     }
 
@@ -855,18 +853,23 @@ Supported revision control systems (vcs/method):
             // old/$branch is saved so user interrupt won't hurt such 'rebase' updates
             $updateold = "$git branch --no-track -f \"old/$branch\" \"origin/$branch\"";
             $contains = JobControl::shell_exec(
-                "$git rev-parse \"old/$branch\" || $updateold".
+                "$git rev-parse \"old/$branch\" >/dev/null || $updateold >/dev/null".
                 " ; $git branch --list --contains \"old/$branch\" \"$branch\"".
                 " ; $git branch --list --all --contains \"$branch\" \"old/$branch\""
             );
-            if ($contains)
+            if ($contains == "* $branch\n  remotes/old/$branch\n" ||
+                $contains == "  $branch\n* remotes/old/$branch\n")
+            {
+                // Branches contain each other - so they're equal
+            }
+            elseif ($contains)
             {
                 $rev = trim(JobControl::shell_exec("$git rev-parse \"old/$branch\""));
                 JobControl::spawn(
                     "$git config --replace-all remote.origin.url \"$repo\"".
                     " && $git --work-tree=\"$dest\" fetch --progress origin".
                     " && $git --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"".
-                    " && $updateold",
+                    " && $git branch -D \"old/$branch\"",
                     $cb, $name);
             }
             else
