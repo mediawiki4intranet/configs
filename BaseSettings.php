@@ -1,7 +1,8 @@
 <?php
 
 // MediaWiki4Intranet configuration base for all MW installations (UNIX, Windows)
-// (c) Stas Fomin, Vitaliy Filippov 2008-2011
+// Contains many useful configuration hints
+// (c) Stas Fomin, Vitaliy Filippov 2008-2013
 
 setlocale(LC_ALL, 'ru_RU.UTF-8');
 setlocale(LC_NUMERIC, 'C');
@@ -81,7 +82,10 @@ $wgFileExtensions = array(
 $wgAllowCopyUploads     = true;
 $wgStrictFileExtensions = false;
 
-array_push($wgUrlProtocols,"file://");
+// Do not deny img_auth.php access if wiki has public read permission! (IntraACL may still deny access)
+$wgImgAuthPublicTest    = false;
+
+array_push($wgUrlProtocols, "file://");
 $wgLanguageCode = "ru";
 
 $wgSMTP = false;
