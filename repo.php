@@ -55,6 +55,7 @@ class Repo
     var $dist = array();
     var $localindex_file, $localindex = array('params' => array(), 'revs' => array());
     var $distindex_file, $distindex = array();
+    var $included_distindex = array();
 
     var $dist_name;
     var $method;
@@ -262,6 +263,15 @@ Supported revision control systems (vcs/method):
         }
         if ($this->distindex)
         {
+            // Remove components with versions equal to ones in parent distribution
+            foreach ($this->included_distindex as $k => $rev)
+            {
+                if (isset($this->distindex[$k]) && $this->distindex[$k] === $rev)
+                {
+                    unset($this->distindex[$k]);
+                }
+            }
+            // Update distribution index
             write_ini_file($this->distindex_file, $this->distindex);
         }
     }
@@ -285,9 +295,15 @@ Supported revision control systems (vcs/method):
         {
             if (isset($dist['_params']['include']))
             {
-                foreach ((array)$dist['_params']['include'] as $file)
+                foreach ((array)$dist['_params']['include'] as $included_dist)
                 {
-                    $this->parse_config($this->cfg_dir.'/'.$file);
+                    $this->parse_config($this->cfg_dir.'/'.$included_dist.'.ini');
+                    $included_distindex_file = $this->cfg_dir.'/'.$included_dist.'-index.ini';
+                    if (file_exists($included_distindex_file))
+                    {
+                        $di = parse_ini_file($included_distindex_file, true) ?: array();
+                        $this->included_distindex = $di + $this->included_distindex;
+                    }
                 }
             }
             if (isset($dist['_params']['destination']) &&
