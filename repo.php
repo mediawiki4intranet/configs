@@ -1121,10 +1121,18 @@ class JobControl
             $n[(int)$proc['out']] = $pid;
             $n[(int)$proc['err']] = $pid;
         }
-        stream_select($r, $w, $x, 0, 500000);
-        foreach ($r as $desc)
+        error_reporting((E_ALL | E_STRICT) & ~E_WARNING);
+        if (stream_select($r, $w, $x, 0, 500000) !== false)
         {
-            self::input_from($desc, self::$childProcs[$n[(int)$desc]]);
+            error_reporting(E_ALL | E_STRICT);
+            foreach ($r as $desc)
+            {
+                self::input_from($desc, self::$childProcs[$n[(int)$desc]]);
+            }
+        }
+        else
+        {
+            error_reporting(E_ALL | E_STRICT);
         }
         self::reap_children();
         return true;

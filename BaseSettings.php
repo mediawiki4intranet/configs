@@ -213,6 +213,8 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     $smwgNamespaceIndex = 120;
     require_once($IP.'/extensions/SemanticMediaWiki/SemanticMediaWiki.php');
     require_once($IP.'/extensions/SemanticInternalObjects/SemanticInternalObjects.php');
+    $smwgQMaxSize = 128;
+    $smwgQMaxDepth = 16;
 
     $wgExtensionFunctions[] = 'autoEnableSemantics';
     $wgClassSettings['SMWResultPrinter']['maxRecursionDepth'] = 15;
