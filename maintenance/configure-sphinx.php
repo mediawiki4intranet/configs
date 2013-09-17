@@ -234,6 +234,7 @@ index $wiki[name]
     rt_attr_uint    = namespace
     rt_attr_string  = category
     rt_field        = category_search
+    rt_attr_uint    = date_insert
     enable_star     = 1
     charset_type    = utf-8
     charset_table   = 0..9, A..Z->a..z, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F
