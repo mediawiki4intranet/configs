@@ -6,6 +6,8 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
+ * Version: 2013-09-28
+ *
  * Repo commands:
  *
  * php repo.php help
@@ -1014,6 +1016,15 @@ class JobControl
             if (!empty(self::$childProcs[$pid]))
             {
                 self::input_from(self::$childProcs[$pid]['out'], self::$childProcs[$pid]);
+                if (self::$childProcs[$pid]['echo'])
+                {
+                    $n = self::$childProcs[$pid]['name'];
+                    if (!empty(self::$lastStr[$n]))
+                    {
+                        $ok = $code ? 'color_fail' : 'color_ok';
+                        self::print_line_for($n, self::$ok(self::$lastStr[$n]));
+                    }
+                }
                 $cb = self::$childProcs[$pid]['cb'];
                 if ($cb)
                 {
@@ -1027,15 +1038,6 @@ class JobControl
                     );
                 }
                 proc_close(self::$childProcs[$pid]['proc']);
-                if (self::$childProcs[$pid]['echo'])
-                {
-                    $n = self::$childProcs[$pid]['name'];
-                    if (!empty(self::$lastStr[$n]))
-                    {
-                        $ok = $code ? 'color_fail' : 'color_ok';
-                        self::print_line_for($n, self::$ok(self::$lastStr[$n]));
-                    }
-                }
                 unset(self::$childProcs[$pid]);
             }
         }
@@ -1096,10 +1098,10 @@ class JobControl
     {
         if (self::$failedTasks)
         {
-            print "\n\n".self::color_fail(count(self::$failedTasks)." tasks failed:\n");
+            print "\n".self::color_fail(count(self::$failedTasks)." tasks failed:\n");
             foreach (self::$failedTasks as $t)
             {
-                print self::color_fail($t[0].': ').$t[1]."\n";
+                print self::color_fail($t[0].': ').rtrim($t[1])."\n";
             }
         }
     }
