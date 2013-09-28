@@ -897,7 +897,7 @@ Supported revision control systems (vcs/method):
                     "$git config --replace-all remote.origin.url \"$repo\"".
                     " && $git --work-tree=\"$dest\" fetch --progress origin".
                     " && $git --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"".
-                    " && $git branch --quiet -D \"old/$branch\"",
+                    " && ($git branch -D \"old/$branch\" >/dev/null)",
                     $cb, $name);
             }
             else
