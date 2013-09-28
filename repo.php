@@ -471,7 +471,7 @@ Supported revision control systems (vcs/method):
         {
             if (!isset($this->distindex[$path]) || $this->distindex[$path] !== $rev)
             {
-                JobControl::print_line_for($path, "latest version updated to $rev");
+                JobControl::print_line_for($path, JobControl::color_ok("latest version updated to $rev"));
                 $this->distindex[$path] = $rev;
             }
             $this->localindex['revs'][$ik] = $rev;
@@ -592,6 +592,7 @@ Supported revision control systems (vcs/method):
      */
     function update($force = false)
     {
+        $self = $this;
         JobControl::init($this->parallel);
         if (!$this->no_refresh)
         {
@@ -602,59 +603,65 @@ Supported revision control systems (vcs/method):
         foreach ($this->dist as $path => $cfg)
         {
             $suff = $cfg['vcs'].'_'.$this->method;
-            $getrev = "getrev_$suff";
-            $check = $force || !isset($this->distindex[$path]);
-            $rev = NULL;
-            if (!$check)
+            $getrev = "getrev_async_$suff";
+            $doUpdate = function($rev) use($self, $path, $cfg, $getrev, &$updated, $suff)
             {
-                // FIXME remove hardcode
-                if ($this->method == 'ro')
-                {
-                    $check = !isset($this->localindex['revs'][$cfg['rel_path']]) ||
-                        $this->localindex['revs'][$cfg['rel_path']] !== $this->distindex[$path];
-                }
-                else
-                {
-                    $rev = $this->$getrev($cfg);
-                    $check = !$rev || $this->distindex[$path] !== $rev;
-                }
-            }
-            if ($check)
-            {
-                if ($rev === NULL)
-                {
-                    $rev = $this->$getrev($cfg);
-                }
                 $updated = true;
-                $self = $this;
-                $cb = function($code) use($getrev, $path, $cfg, $self)
+                $afterUpdate = function($code, $capture) use($self, $path, $cfg, $getrev)
                 {
                     if (!$code)
                     {
-                        $rev = $self->$getrev($cfg);
-                        $self->setrev($path, $rev, $cfg);
+                        $self->$getrev($cfg, function($rev, $error) use($self, $path, $cfg)
+                        {
+                            if ($rev)
+                            {
+                                $self->setrev($path, $rev, $cfg);
+                            }
+                            else
+                            {
+                                JobControl::print_line_for($path, JobControl::color_fail("Failed to get revision after successful update"));
+                            }
+                            JobControl::finish($path);
+                        }, $path);
+                    }
+                    else
+                    {
+                        JobControl::finish($path);
                     }
                 };
-                if ($rev)
+                $m = $rev ? "update_$suff" : "install_$suff";
+                $self->$m($cfg, $afterUpdate, $path);
+            };
+            // FIXME remove hardcode 'ro'
+            if ($this->method == 'ro')
+            {
+                $rev = isset($this->localindex['revs'][$cfg['rel_path']]) ? $this->localindex['revs'][$cfg['rel_path']] : false;
+                if ($force || !$rev || !isset($this->distindex[$path]) || $rev !== $this->distindex[$path])
                 {
-                    $m = "update_$suff";
+                    $doUpdate($rev);
                 }
-                else
+            }
+            else
+            {
+                $this->$getrev($cfg, function($rev, $error) use($self, $path, $doUpdate, $force)
                 {
-                    $m = "install_$suff";
-                }
-                $this->$m($cfg, $cb, $path);
+                    if ($force || !$rev || !isset($self->distindex[$path]) || $rev !== $self->distindex[$path])
+                    {
+                        $doUpdate($rev);
+                    }
+                }, $path);
             }
             JobControl::do_input();
         }
         while (JobControl::do_input())
         {
         }
+        JobControl::reset();
+        JobControl::print_failed_tasks();
         if (!$updated)
         {
             print "Everything up-to-date.\n";
         }
-        JobControl::print_failed_tasks();
         if ($this->export_dir)
         {
             $this->export(true);
@@ -804,6 +811,11 @@ Supported revision control systems (vcs/method):
         return $this->getrev_git_rw($cfg, $error);
     }
 
+    function getrev_async_git_ro($cfg, $cb, $name)
+    {
+        $this->getrev_async_git_rw($cfg, $cb, $name);
+    }
+
     function export_git_ro($cfg, $cb, $name)
     {
         $this->export_git_rw($cfg, $cb, $name);
@@ -885,7 +897,7 @@ Supported revision control systems (vcs/method):
                     "$git config --replace-all remote.origin.url \"$repo\"".
                     " && $git --work-tree=\"$dest\" fetch --progress origin".
                     " && $git --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"".
-                    " && $git branch -D \"old/$branch\"",
+                    " && $git branch --quiet -D \"old/$branch\"",
                     $cb, $name);
             }
             else
@@ -905,6 +917,25 @@ Supported revision control systems (vcs/method):
                 " && $git --work-tree=\"$dest\" merge \"origin/$branch\"",
                 $cb, $name);
         }
+    }
+
+    function getrev_async_git_rw($cfg, $cb, $name)
+    {
+        $dest = $cfg['path'];
+        JobControl::spawn(
+            "git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1", function($code, $out) use($cb)
+            {
+                $out = trim($out);
+                if (strlen($out) !== 40)
+                {
+                    $cb(false, $out);
+                }
+                else
+                {
+                    $cb($out, false);
+                }
+            }, $name, JobControl::NO_OUTPUT
+        );
     }
 
     function getrev_git_rw($cfg, &$error = NULL)
@@ -939,6 +970,8 @@ Supported revision control systems (vcs/method):
  */
 class JobControl
 {
+    const NO_OUTPUT = 2;
+
     static $childProcs = array();
     static $parallel = 1;
     static $queue = array();
@@ -980,6 +1013,7 @@ class JobControl
             $code = pcntl_wexitstatus($st);
             if (!empty(self::$childProcs[$pid]))
             {
+                self::input_from(self::$childProcs[$pid]['out'], self::$childProcs[$pid]);
                 $cb = self::$childProcs[$pid]['cb'];
                 if ($cb)
                 {
@@ -993,27 +1027,16 @@ class JobControl
                     );
                 }
                 proc_close(self::$childProcs[$pid]['proc']);
-                $n = self::$childProcs[$pid]['name'];
-                if (!empty(self::$lastStr[$n]))
+                if (self::$childProcs[$pid]['echo'])
                 {
-                    self::seek_to($stopped);
-                    $ok = $code ? 'color_fail' : 'color_ok';
-                    print "\r".self::prompt($n).self::$ok(self::$lastStr[$n]);
-                    $stopped++;
+                    $n = self::$childProcs[$pid]['name'];
+                    if (!empty(self::$lastStr[$n]))
+                    {
+                        $ok = $code ? 'color_fail' : 'color_ok';
+                        self::print_line_for($n, self::$ok(self::$lastStr[$n]));
+                    }
                 }
-                unset(self::$positions[$n]);
                 unset(self::$childProcs[$pid]);
-            }
-        }
-        // Move lines from finished processes up
-        if ($stopped > 0 && self::$parallel > 1)
-        {
-            self::$curPos = -1;
-            self::$maxPos -= $stopped;
-            foreach (self::$childProcs as $proc)
-            {
-                self::$positions[$proc['name']] = ++self::$curPos;
-                print "\n\r".self::prompt($proc['name']).@self::$lastStr[$proc['name']];
             }
         }
         // Spawn queued processes
@@ -1022,6 +1045,48 @@ class JobControl
             call_user_func_array(__CLASS__.'::spawn', array_shift(self::$queue));
         }
         return $code;
+    }
+
+    /**
+     * Move finished line up
+     */
+    static function finish($name)
+    {
+        if (self::$parallel <= 1 || !isset(self::$lastStr[$name]))
+        {
+            return;
+        }
+        $old_pos = self::$positions[$name];
+        self::$positions[$name] = 0;
+        self::print_line_for($name, self::$lastStr[$name]);
+        self::$maxPos--;
+        self::$curPos--;
+        unset(self::$positions[$name]);
+        $dup = array();
+        $doDup = true;
+        foreach (self::$positions as $name => &$pos)
+        {
+            if ($doDup && isset($dup[$pos]))
+            {
+                $d = $dup[$pos];
+                $pos = self::$maxPos++;
+                $doDup = false;
+                self::print_line_for($name, self::$lastStr[$name]);
+                self::$curPos++;
+                print "\n";
+                self::print_line_for($d, self::$lastStr[$d]);
+                continue;
+            }
+            $dup[$pos] = $name;
+            if ($pos > $old_pos)
+            {
+                $pos--;
+            }
+            else
+            {
+                self::print_line_for($name, self::$lastStr[$name]);
+            }
+        }
     }
 
     /**
@@ -1042,14 +1107,15 @@ class JobControl
     /**
      * Just a synchronous shell_exec which ignores STDERR and returns full STDOUT contents
      */
-    static function shell_exec($cmd)
+    static function shell_exec($cmd, &$exitcode = NULL)
     {
         $desc = array(STDIN, array('pipe', 'w'), array('file', '/dev/null', 'w'));
         $proc = proc_open($cmd, $desc, $pipes);
         $st = proc_get_status($proc);
         $contents = stream_get_contents($pipes[1]);
         fclose($pipes[1]);
-        self::reap_children($st['pid']);
+        $exitcode = self::reap_children($st['pid']);
+        proc_close($proc);
         return $contents;
     }
 
@@ -1060,6 +1126,24 @@ class JobControl
     {
         if (self::$parallel < 2 || !$callback)
         {
+            if ($captureOutput)
+            {
+                $exitcode = 0;
+                $out = self::shell_exec($cmd, $exitcode);
+                if (!($captureOutput & self::NO_OUTPUT))
+                {
+                    if ("$name" !== '')
+                    {
+                        print "$name: \n";
+                    }
+                    print $out;
+                }
+                if ($callback)
+                {
+                    $callback($exitcode, $out);
+                }
+                return $exitcode;
+            }
             if ("$name" !== '')
             {
                 print "$name: \n";
@@ -1073,24 +1157,25 @@ class JobControl
         }
         if (count(self::$childProcs) >= self::$parallel)
         {
-            self::$queue[] = func_get_args();
+            $args = func_get_args();
+            if (isset(self::$positions[$name]))
+            {
+                // Run jobs for unfinished tasks first
+                // Needed to finish them in time so we don't exceed maximum line number
+                array_unshift(self::$queue, $args);
+            }
+            else
+            {
+                self::$queue[] = $args;
+            }
             return;
         }
         $proc = proc_open($cmd, array(STDIN, array('pipe', 'w'), array('pipe', 'w')), $pipes);
         $st = proc_get_status($proc);
         $pid = $st['pid'];
-        if (self::$termLines && self::$maxPos >= self::$termLines)
+        if (!($captureOutput & self::NO_OUTPUT))
         {
-            self::$positions[$name] = self::$maxPos-1;
             self::print_line_for($name, "started $pid");
-        }
-        else
-        {
-            self::$positions[$name] = self::$maxPos++;
-            self::seek_to(self::$positions[$name]);
-            self::$lastStr[$name] = "started $pid";
-            print self::prompt($name)."started $pid\n";
-            self::$curPos++;
         }
         self::$childProcs[$pid] = array(
             'proc' => $proc,
@@ -1100,6 +1185,7 @@ class JobControl
             'err' => $pipes[2],
             'name' => $name,
             'capture' => $captureOutput ? '' : false,
+            'echo' => !($captureOutput & self::NO_OUTPUT),
         );
     }
 
@@ -1155,10 +1241,24 @@ class JobControl
 
     static function print_line_for($name, $line)
     {
-        if (!isset(self::$positions[$name]))
+        if (self::$parallel <= 1)
         {
-            print "$name: $line\n";
+            print "$name: ".rtrim($line)."\n";
             return;
+        }
+        $add = false;
+        if (!isset(self::$positions[$name]) ||
+            self::$termLines && self::$positions[$name] >= self::$termLines-1)
+        {
+            if (self::$termLines && self::$maxPos >= self::$termLines-1)
+            {
+                self::$positions[$name] = self::$maxPos-1;
+            }
+            else
+            {
+                self::$positions[$name] = self::$maxPos++;
+                $add = true;
+            }
         }
         $prompt = self::prompt($name);
         $line = str_replace("\n", "\r".$prompt, str_replace("\r", "\r".$prompt, trim($line)));
@@ -1166,6 +1266,11 @@ class JobControl
         $p = strrpos($line, "\r");
         self::$lastStr[$name] = $p !== false ? substr($line, $p+1+strlen($prompt)) : $line;
         print $prompt.$line;
+        if ($add)
+        {
+            print "\n";
+            self::$curPos++;
+        }
     }
 
     static function seek_to($pos)
@@ -1191,7 +1296,10 @@ class JobControl
         {
             $proc['capture'] .= $line;
         }
-        self::print_line_for($proc['name'], $line);
+        if ($proc['echo'])
+        {
+            self::print_line_for($proc['name'], $line);
+        }
         return true;
     }
 }
