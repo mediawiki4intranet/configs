@@ -1111,12 +1111,16 @@ class JobControl
      */
     static function shell_exec($cmd, &$exitcode = NULL)
     {
-        $desc = array(STDIN, array('pipe', 'w'), array('file', '/dev/null', 'w'));
+        $desc = array(STDIN, array('pipe', 'w'), array('file', 'php://stdout', 'w'));
         $proc = proc_open($cmd, $desc, $pipes);
-        $st = proc_get_status($proc);
         $contents = stream_get_contents($pipes[1]);
         fclose($pipes[1]);
-        $exitcode = self::reap_children($st['pid']);
+        $st = proc_get_status($proc);
+        while ($st['running'])
+        {
+            time_nanosleep(0, 100000000);
+        }
+        $exitcode = $st['exitcode'];
         proc_close($proc);
         return $contents;
     }
