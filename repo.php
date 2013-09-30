@@ -1119,6 +1119,7 @@ class JobControl
         while ($st['running'])
         {
             time_nanosleep(0, 100000000);
+            $st = proc_get_status($proc);
         }
         $exitcode = $st['exitcode'];
         proc_close($proc);
