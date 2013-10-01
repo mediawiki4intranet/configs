@@ -883,7 +883,7 @@ Supported revision control systems (vcs/method):
             // old/$branch is saved so user interrupt won't hurt such 'rebase' updates
             $updateold = "$git branch --no-track -f \"old/$branch\" \"origin/$branch\"";
             $contains = JobControl::shell_exec(
-                "$git rev-parse \"old/$branch\" >/dev/null || $updateold >/dev/null".
+                "$git rev-parse --verify --quiet \"old/$branch\" || $updateold >/dev/null".
                 " ; $git branch --list --contains \"old/$branch\" \"$branch\"".
                 " ; $git branch --list --all --contains \"$branch\" \"old/$branch\""
             );
