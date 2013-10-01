@@ -72,7 +72,7 @@ if ($wikis_file)
     require_once($wikis_file);
     if (empty($wikis[$hostname]))
     {
-        $all_hostnames = implode(', ', array_keys($wikis[$hostname]));
+        $all_hostnames = implode(', ', array_keys($wikis));
         print "ERROR: Host $hostname is not configured in wiki family config '$wikis_file'\n";
         print "Specify one of $all_hostnames with --hostname <X>\n";
         exit;
