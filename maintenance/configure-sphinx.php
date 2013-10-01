@@ -177,6 +177,7 @@ searchd
 {
     listen       = 127.0.0.1:3112
     log          = /var/log/sphinxsearch/sphinx.log
+    binlog_path  = /var/lib/sphinxsearch/data
     query_log    = /var/log/sphinxsearch/query.log
     read_timeout = 5
     max_children = 30
