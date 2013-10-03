@@ -1016,6 +1016,7 @@ class JobControl
             if (!empty(self::$childProcs[$pid]))
             {
                 self::input_from(self::$childProcs[$pid]['out'], self::$childProcs[$pid]);
+                self::input_from(self::$childProcs[$pid]['err'], self::$childProcs[$pid]);
                 if (self::$childProcs[$pid]['echo'])
                 {
                     $n = self::$childProcs[$pid]['name'];
