@@ -79,11 +79,13 @@ $wgFileExtensions = array(
     'djvu', 'pdf', 'xml', 'mm'
 );
 
-$wgAllowCopyUploads     = true;
+// Allow URL uploads
+$wgAllowCopyUploads = true;
+$wgCopyUploadsFromSpecialUpload = true;
 $wgStrictFileExtensions = false;
 
 // Do not deny img_auth.php access if wiki has public read permission! (IntraACL may still deny access)
-$wgImgAuthPublicTest    = false;
+$wgImgAuthPublicTest = false;
 
 array_push($wgUrlProtocols, "file://");
 $wgLanguageCode = "ru";
