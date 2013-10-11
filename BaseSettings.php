@@ -177,6 +177,9 @@ require_once($IP.'/extensions/NewPagesEx/NewPagesEx.php');
 require_once($IP.'/extensions/Calendar/Calendar.php');
 require_once($IP.'/extensions/SimpleTable/SimpleTable.php');
 require_once($IP.'/extensions/MagicNumberedHeadings/MagicNumberedHeadings.php');
+// Numbered headings by default for new users
+$wgDefaultUserOptions['wpnumberheadings'] = 1;
+
 require_once($IP.'/extensions/MediaFunctions/MediaFunctions.php');
 require_once($IP.'/extensions/AllowGetParamsInWikilinks/AllowGetParamsInWikilinks.php');
 require_once($IP.'/extensions/WikiBookmarks/WikiBookmarks.php');
