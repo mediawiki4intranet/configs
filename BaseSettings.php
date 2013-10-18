@@ -22,10 +22,12 @@ $path = array($IP, "$IP/includes", "$IP/includes/specials","$IP/languages");
 set_include_path(implode(PATH_SEPARATOR, $path) . PATH_SEPARATOR . get_include_path());
 
 require_once($IP . '/includes/DefaultSettings.php');
-$wgSitename         = "CustisWiki";
 
-## The URL base path to the directory containing the wiki;
-## defaults for all runtime URL paths are based off of this.
+// Powered by 4intranet icon
+$wgExtensionFunctions[] = 'efPoweredBy4Intranet';
+
+# Default sitename and URL base path
+$wgSitename         = "CustisWiki";
 $wgScriptPath       = "/wiki";
 $wgScriptExtension  = ".php";
 $wgUsePathInfo      = true;
@@ -349,8 +351,6 @@ $wgAllowedRawCTypes = true;
 $wgDefaultUserOptions['vector-simplesearch'] = true;
 $wgVectorUseSimpleSearch = true;
 
-// Powered by 4intranet icon
-$wgExtensionFunctions[] = 'efPoweredBy4Intranet';
 function efPoweredBy4Intranet()
 {
     global $wgFooterIcons, $wgScriptPath;
