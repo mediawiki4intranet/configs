@@ -348,3 +348,16 @@ $wgAllowedRawCTypes = true;
 // Use "wikipedia-like" search box in Vector skin
 $wgDefaultUserOptions['vector-simplesearch'] = true;
 $wgVectorUseSimpleSearch = true;
+
+// Powered by 4intranet icon
+$wgExtensionFunctions[] = 'efPoweredBy4Intranet';
+function efPoweredBy4Intranet()
+{
+    global $wgFooterIcons, $wgScriptPath;
+    $wgFooterIcons['poweredby']['mediawiki4intranet'] = array(
+        'src' => $wgScriptPath.'/configs/logos/poweredby-4intranet.png',
+        'url' => 'http://wiki.4intra.net/',
+        'title' => 'Powered by MediaWiki4Intranet extension bundle',
+        'alt' => 'MediaWiki4Intranet',
+    );
+}
