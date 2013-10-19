@@ -516,32 +516,15 @@ Supported revision control systems (vcs/method):
             else
             {
                 // Pull to configuration repository and check for conflicts
-                $exists = file_exists($this->cfg_dir.'/'.$this->dist_name.'-index.ini');
                 $code = JobControl::spawn(
-                    ($exists ? "git $wc checkout -- {$this->dist_name}-index.ini && " : '').
-                    "git $wc pull".
-                    ($exists ? " && git $wc checkout --theirs -- {$this->dist_name}-index.ini" : ''),
+                    "git $wc checkout -- {$this->dist_name}-index.ini 2>/dev/null".
+                    " ; git $wc pull --ff-only".
                     false, false
                 );
                 if ($code)
                 {
                     print "You have conflicting changes in config repository, do 'git pull' manually\n";
                     exit(9);
-                }
-                $status = JobControl::shell_exec("git $wc status --porcelain -uno");
-                foreach (explode("\n", $status) as $line)
-                {
-                    $st = explode(' ', trim($line));
-                    if (count($st) > 1)
-                    {
-                        list($st, $fn) = $st;
-                        if (($st == 'DD' || substr($st, 0, 1) == 'U' || substr($st, 1, 1) == 'U') &&
-                            $line !== $this->dist_name.'-index.ini')
-                        {
-                            print "There are unmerged paths, please resolve conflicts before using repo\n$status";
-                            exit(8);
-                        }
-                    }
                 }
             }
             clearstatcache();
