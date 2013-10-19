@@ -356,7 +356,7 @@ function efPoweredBy4Intranet()
     global $wgFooterIcons, $wgScriptPath;
     $wgFooterIcons['poweredby']['mediawiki4intranet'] = array(
         'src' => $wgScriptPath.'/configs/logos/poweredby-4intranet.png',
-        'url' => 'http://wiki.4intra.net/',
+        'url' => 'http://wiki.4intra.net/MediaWiki4Intranet',
         'title' => 'Powered by MediaWiki4Intranet extension bundle',
         'alt' => 'MediaWiki4Intranet',
     );
