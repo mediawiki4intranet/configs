@@ -421,6 +421,7 @@ Supported revision control systems (vcs/method):
                 print "Warning: Distribution index for {$this->dist_name} is corrupt, will be recreated\n";
             }
         }
+        $this->distindex += $this->included_distindex;
     }
 
     /**
@@ -515,10 +516,11 @@ Supported revision control systems (vcs/method):
             else
             {
                 // Pull to configuration repository and check for conflicts
+                $exists = file_exists($this->cfg_dir.'/'.$this->dist_name.'-index.ini');
                 $code = JobControl::spawn(
-                    "git $wc checkout -- {$this->dist_name}-index.ini".
-                    " && git $wc pull".
-                    " && git $wc checkout --theirs -- {$this->dist_name}-index.ini",
+                    ($exists ? "git $wc checkout -- {$this->dist_name}-index.ini && " : '').
+                    "git $wc pull".
+                    ($exists ? " && git $wc checkout --theirs -- {$this->dist_name}-index.ini" : ''),
                     false, false
                 );
                 if ($code)
@@ -604,6 +606,10 @@ Supported revision control systems (vcs/method):
         $updated = false;
         foreach ($this->dist as $path => $cfg)
         {
+            if (empty($cfg['vcs']))
+            {
+                continue;
+            }
             $suff = $cfg['vcs'].'_'.$this->method;
             $getrev = "getrev_async_$suff";
             $doUpdate = function($rev) use($self, $path, $cfg, $getrev, &$updated, $suff)
