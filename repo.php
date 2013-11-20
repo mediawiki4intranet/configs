@@ -318,13 +318,13 @@ Supported revision control systems (vcs/method):
                 if ($k[0] === 'prefix')
                 {
                     $v = explode(':', $v, 2);
-                    if (count($k) != 3 || count($v) != 2)
+                    if (count($k) != 2 || count($v) != 2)
                     {
-                        print "Invalid prefix option format: $k = $v\nCorrect format is: prefix:<name>:<method> = <vcs>:<url>\n";
+                        print "Invalid prefix option format: $k = $v\nCorrect format is: prefix:<name> = <vcs>:<url>\n";
                         exit(2);
                     }
                     $this->prefixes[$k[1]]['vcs'] = $v[0];
-                    $this->prefixes[$k[1]]['methods'][$k[2]] = $v[1];
+                    $this->prefixes[$k[1]]['url'] = $v[1];
                 }
             }
             unset($dist['_params']);
@@ -724,12 +724,12 @@ Supported revision control systems (vcs/method):
                     exit(4);
                 }
                 $cfg['vcs'] = $this->prefixes[$prefix]['vcs'];
-                if (!isset($this->prefixes[$prefix]['methods'][$this->method]))
+                if (!isset($this->prefixes[$prefix]['url']))
                 {
-                    print "No repository URL found for prefix '$prefix' and method '{$this->method}', exiting\n";
+                    print "No repository URL found for prefix '$prefix', exiting\n";
                     exit(5);
                 }
-                $cfg['repo'] = str_replace('$REPO', $repo, $this->prefixes[$prefix]['methods'][$this->method]);
+                $cfg['repo'] = str_replace('$REPO', $repo, $this->prefixes[$prefix]['url']);
             }
         }
     }

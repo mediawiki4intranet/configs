@@ -147,15 +147,67 @@ php extensions/SphinxSearchEngine/rebuild-sphinx.php
 At this point you're done and now have a working Mediawiki4Intranet installation,
 with all included extensions and patches.
 
-NB: If you have commit access and want to participate in development, use read-write
+=== Using read-write clones ===
+
+If you have commit access and want to participate in development, use read-write
 installation instead of read-only:
 
 <pre>
-git clone git@github.com/mediawiki4intranet/configs.git mediawiki/configs
+git clone https://github.com/mediawiki4intranet/configs.git mediawiki/configs
 php mediawiki/configs/repo.php install mediawiki4intranet rw
 </pre>
 
-You may even fork this repository, add your own extensions and create your own bundle! :)
+Then develop as usual, and after push'ing to any extension or core, just run
+the following inside your 'configs' working copy:
+<pre>
+php repo.php update
+git push
+</pre>
+
+'''CAUTION:''' Since recently, repo.php doesn't use different URLs for read-only
+and read-write clones. So, to push to github via ssh, use the built-in Git feature:
+
+<pre>
+git config --global url.ssh://git@github.com.pushinsteadof https://github.com
+</pre>
+
+=== Creating your own bundle ===
+
+To create your own bundle, fork this repository, clone it or switch your
+existing 'configs' working copy to it (it '''must''' be '''read-write'''),
+and then use the inclusion feature of repo.php:
+
+Create your own 'my-super-bundle.ini' in your 'configs' working copy using
+the following template:
+
+<pre>
+[_params]
+include[] = mediawiki4intranet
+
+;; Optionally add your own repository url prefixes:
+;prefix.my-server = git:http://my.site/git/$REPO.git
+
+; And add some extensions like this:
+[extensions/MyExtension]
+repo = my-server:MyExtension
+;; You may override the checked out branch using:
+;branch = master
+
+;; Or remove extensions like this:
+;[extensions/Wikilog]
+;repo =
+</pre>
+
+Then run:
+<pre>
+php repo.php install my-super-bundle rw
+git add my-super-bundle.ini my-super-bundle-index.ini
+git commit -m "Created a fork of MediaWiki4Intranet bundle with my own extension!"
+git push
+</pre>
+
+As you already may have noticed, this doesn't change any files or our distribution,
+so the resulting repository will be very easy to merge with newer versions of our one.
 
 == Standalone Windows bundle ==
 
@@ -176,13 +228,8 @@ Use it only if you want to have Mediawiki4Intranet on your local machine with th
 
 == repo.php TODO ==
 
-DEFINITELY:
-* Set up remotes for additional repositories of the same module (i.e. wikimedia for our forks)
-* More flexible setup of readonly/readwrite remotes. I.e. allow to clone some repositories via
-  https and others via ssh, or allow to clone via https, but push via ssh. Maybe via the same
-  mechanism of remotes.
-
 MAYBE:
+* Setup remotes for additional repositories of the same module (i.e. wikimedia for our forks)
 * Support automatic calling maintenance/update.php for DB updates
 * Support 'soft update' for the case of added extensions:
 ** First update configs dir except *Settings.php
