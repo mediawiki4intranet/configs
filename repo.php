@@ -53,7 +53,7 @@ sigexit();
 class Repo
 {
     var $cfg_dir;
-    var $prefixes_file, $prefixes = array();
+    var $prefixes = array();
     var $dist = array();
     var $localindex_file, $localindex = array('params' => array(), 'revs' => array());
     var $distindex_file, $distindex = array();
@@ -245,7 +245,6 @@ Supported revision control systems (vcs/method):
             print "Distribution not specified, exiting\n";
             exit(1);
         }
-        $this->prefixes_file = $this->cfg_dir.'/prefixes.ini';
         $this->dist_cfg = $this->cfg_dir."/{$this->dist_name}.ini";
     }
 
@@ -313,9 +312,20 @@ Supported revision control systems (vcs/method):
             {
                 $this->dest_dir = $dist['_params']['destination'];
             }
-            if (isset($dist['_params']['prefixes']))
+            foreach ($dist['_params'] as $k => $v)
             {
-                $this->prefixes_file = $this->cfg_dir.'/'.$dist['_params']['prefixes'];
+                $k = explode('.', $k);
+                if ($k[0] === 'prefix')
+                {
+                    $v = explode(':', $v, 2);
+                    if (count($k) != 3 || count($v) != 2)
+                    {
+                        print "Invalid prefix option format: $k = $v\nCorrect format is: prefix:<name>:<method> = <vcs>:<url>\n";
+                        exit(2);
+                    }
+                    $this->prefixes[$k[1]]['vcs'] = $v[0];
+                    $this->prefixes[$k[1]]['methods'][$k[2]] = $v[1];
+                }
             }
             unset($dist['_params']);
         }
@@ -422,17 +432,6 @@ Supported revision control systems (vcs/method):
             }
         }
         $this->distindex += $this->included_distindex;
-    }
-
-    /**
-     * Parse prefixes INI file
-     */
-    function parse_prefixes()
-    {
-        if (file_exists($this->prefixes_file))
-        {
-            $this->prefixes = parse_ini_file($this->prefixes_file, true) ?: array();
-        }
     }
 
     /**
@@ -546,7 +545,6 @@ Supported revision control systems (vcs/method):
     function load_config()
     {
         $this->parse_config();
-        $this->parse_prefixes();
         $this->parse_distindex();
         $this->set_paths();
         $this->rewrite_prefixes();
