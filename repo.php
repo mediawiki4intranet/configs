@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2013-09-28
+ * Version: 2013-12-18
  *
  * Repo commands:
  *
@@ -912,7 +912,7 @@ Supported revision control systems (vcs/method):
     {
         $dest = $cfg['path'];
         JobControl::spawn(
-            "git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1", function($code, $out) use($cb)
+            "git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1; exit 0", function($code, $out) use($cb)
             {
                 $out = trim($out);
                 if (strlen($out) !== 40)
