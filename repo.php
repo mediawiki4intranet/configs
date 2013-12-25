@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2013-12-18
+ * Version: 2013-12-25
  *
  * Repo commands:
  *
@@ -870,7 +870,8 @@ Supported revision control systems (vcs/method):
             // old/$branch is saved so user interrupt won't hurt such 'rebase' updates
             $updateold = "$git branch --no-track -f \"old/$branch\" \"origin/$branch\"";
             $contains = JobControl::shell_exec(
-                "$git rev-parse --verify --quiet \"old/$branch\" || $updateold >/dev/null".
+                "$git rev-parse --verify --quiet \"$branch\" || $git branch \"$branch\" \"origin/$branch\"".
+                " ; $git rev-parse --verify --quiet \"old/$branch\" || $updateold >/dev/null".
                 " ; $git branch --list --contains \"old/$branch\" \"$branch\"".
                 " ; $git branch --list --all --contains \"$branch\" \"old/$branch\""
             );
