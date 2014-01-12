@@ -323,6 +323,10 @@ $wgNamespacesToBeSearchedDefault = array(
 
 $wgShellLocale = 'ru_RU.UTF-8';
 
+// Memory limit is useless without cgroups - limits virtual memory size instead of really reserved
+$wgMaxShellMemory = 0;
+$wgMaxShellFileSize = 1024000;
+
 $wgNoCopyrightWarnings = true;
 
 $wgEnableMWSuggest     = true;
