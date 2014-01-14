@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2013-12-25
+ * Version: 2014-01-14
  *
  * Repo commands:
  *
@@ -234,6 +234,7 @@ Supported revision control systems (vcs/method):
             }
         }
         $this->cfg_dir = dirname(__FILE__);
+        chdir($this->cfg_dir);
         if ($this->dest_dir)
         {
             // Remember relative destination directories
