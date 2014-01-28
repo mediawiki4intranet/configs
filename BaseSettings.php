@@ -153,6 +153,8 @@ $wgDefaultUserOptions['usebetatoolbar-cgd'] = 1;
 $wgDefaultUserOptions['wikieditor-preview'] = 1;
 $wgDefaultUserOptions['wikieditor-publish'] = 0; // does not work in REL1_20!
 
+require_once($IP.'/extensions/WikiEditorInplace/WikiEditorInplace.php');
+
 require_once($IP.'/extensions/SVGEdit/SVGEdit.php');
 
 $wgGroupPermissions['bureaucrat']['usermerge'] = true;
