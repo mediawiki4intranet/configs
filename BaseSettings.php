@@ -124,7 +124,11 @@ require_once($IP.'/extensions/Cite/Cite.php');
 require_once($IP.'/extensions/SyntaxHighlight_GeSHi/SyntaxHighlight_GeSHi.php');
 require_once($IP.'/extensions/CategoryTree/CategoryTree.php');
 $wgCategoryTreeMaxDepth = array(CT_MODE_PAGES => 100, CT_MODE_ALL => 100, CT_MODE_CATEGORIES => 100);
+
+// CatCatGrouping is enabled, but subcategorized lists are disabled by default
+// So it only does grouping of adjacent characters in alphabet lists
 require_once($IP.'/extensions/CatCatGrouping/CatCatGrouping.php');
+$wgCategorySubcategorizedList = false;
 
 $wgSubcategorizedAlwaysExclude = array('CustisWikiToLib',
     'CustisWikiToSMWiki', 'CustisWikiToSBWiki', 'CustisWikiToRDWiki',
@@ -210,6 +214,7 @@ require_once($IP.'/extensions/PopupWhatlinkshere/PopupWhatlinkshere.php');
 require_once($IP.'/extensions/Variables/Variables.php');
 require_once($IP.'/extensions/LinkAutocomplete/LinkAutocomplete.php');
 require_once($IP.'/extensions/PageSnapshots/PageSnapshots.php');
+require_once($IP.'/extensions/LessUsedCategories/LessUsedCategories.php');
 
 # Drafts
 require_once($IP.'/extensions/Drafts/Drafts.php');
