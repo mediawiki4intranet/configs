@@ -50,6 +50,7 @@ $wgDBTableOptions   = "ENGINE=InnoDB, DEFAULT CHARSET=utf8";
 $wgDBmysql5         = true;
 
 $wgEnableUploads    = true;
+$wgMaxUploadSize    = 1024 * 1024 * 512; # 512MB
 
 $wgLocalInterwiki   = $wgSitename;
 $wgLocaltimezone    = "Europe/Moscow";
