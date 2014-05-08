@@ -51,6 +51,7 @@ $wgDBmysql5         = true;
 
 $wgEnableUploads    = true;
 $wgMaxUploadSize    = 1024 * 1024 * 512; # 512MB
+$wgAllowExternalImages = true;
 
 $wgLocalInterwiki   = $wgSitename;
 $wgLocaltimezone    = "Europe/Moscow";
