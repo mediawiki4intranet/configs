@@ -362,6 +362,9 @@ $wgSphinxSuggestMode = true;
 
 $wgMaxImageArea = 5000*5000;
 
+// Raise article size limit for oversized inclusions (10 MB)
+$wgMaxArticleSize = 1024*10;
+
 // Allow all ?action=raw content types
 $wgAllowedRawCTypes = true;
 
