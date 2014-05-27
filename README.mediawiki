@@ -34,8 +34,8 @@ Optional PHP extensions:
 * [http://wiki.4intra.net/Mediawiki4Intranet#php5-fss php5-fss] for faster string operations.
 * Mail and Net_SMTP PEAR packages for e-mail.
 
-Many of third-party software is also required for different extensions to work,
-but GNU/Linux users may usually 'apt-get' them, and Windows users may use our
+A lot of third-party software is also required for different extensions to work;
+GNU/Linux users may usually 'apt-get' them, and Windows users may use our
 standalone bundle (see below).
 
 * PDF: [http://pages.cs.wisc.edu/~ghost/ GhostScript], [http://poppler.freedesktop.org/ Poppler] — former [http://www.foolabs.com/xpdf/ Xpdf] ([http://gnuwin32.sourceforge.net/packages/xpdf.htm windows)]
@@ -60,7 +60,7 @@ apt-get install php5 php5-mysql php5-gd php5-curl php5-apc php-mail php-net-smtp
 	ffmpeg graphviz gnuplot openjdk-6-jre sphinxsearch zip unzip umlet
 </pre>
 
-After running this apt-get, the only software which must be installed manually will be:
+After running this command, the only software which must be installed manually will be:
 * [http://dvisvgm.sourceforge.net/ dvisvgm]
 * [http://www.umlgraph.org/ UMLGraph]
 * [http://wiki.4intra.net/php5-fss php5-fss]
@@ -144,7 +144,7 @@ EOF
 php extensions/SphinxSearchEngine/rebuild-sphinx.php
 </pre>
 
-At this point you're done and now have a working Mediawiki4Intranet installation,
+At this point you're done and have a working Mediawiki4Intranet installation,
 with all included extensions and patches.
 
 === Using read-write clones ===
@@ -174,7 +174,7 @@ git config --global url.ssh://git@github.com.pushinsteadof https://github.com
 === Creating your own bundle ===
 
 To create your own bundle, fork this repository, clone it or switch your
-existing 'configs' working copy to it (it '''must''' be '''read-write'''),
+existing 'configs' working copy to it (it '''must''' be cloned as '''read-write'''),
 and then use the inclusion feature of repo.php:
 
 Create your own 'my-super-bundle.ini' in your 'configs' working copy using
@@ -206,8 +206,8 @@ git commit -m "Created a fork of MediaWiki4Intranet bundle with my own extension
 git push
 </pre>
 
-As you already may have noticed, this doesn't change any files or our distribution,
-so the resulting repository will be very easy to merge with newer versions of our one.
+As you already may have noticed, this doesn't change any files of our distribution,
+so the resulting repository will be very easy to merge with newer versions of ours.
 
 == Standalone Windows bundle ==
 
