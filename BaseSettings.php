@@ -262,7 +262,6 @@ MediawikiQuizzer::setupNamespace(104);
 require_once($IP.'/extensions/Wikilog/Wikilog.php');
 Wikilog::setupBlogNamespace(100);
 $wgWikilogPagerDateFormat = 'ymd hms';
-$wgNamespacesToBeSearchedDefault[NS_BLOG] = 1;
 $wgWikilogMaxCommentSize = 0x7FFFFFFF;
 $wgWikilogDefaultNotCategory = 'Скрытые';
 $wgWikilogSearchDropdowns = true;
@@ -328,6 +327,7 @@ $wgNamespacesToBeSearchedDefault = array(
     NS_FILE => 1,
     NS_HELP => 1,
     NS_CATEGORY => 1,
+    NS_BLOG => 1,
 );
 
 $wgShellLocale = 'ru_RU.UTF-8';
