@@ -181,12 +181,10 @@ searchd
     query_log    = /var/log/sphinxsearch/query.log
     read_timeout = 5
     max_children = 30
-    pid_file     = /var/run/sphinxsearch/searchd.pid
-    max_matches  = 1000'.($style == 'rt' ? (substr(php_uname(), 0, 7) == 'Windows' ? '
+    pid_file     = /var/run/sphinxsearch/searchd.pid'.($style == 'rt' ? (substr(php_uname(), 0, 7) == 'Windows' ? '
     listen       = 127.0.0.1:9306:mysql41' : '
     listen       = /var/run/sphinxsearch/searchd.sock:mysql41').'
-    workers      = threads
-    compat_sphinxql_magics = 0' : '').'
+    workers      = threads' : '').'
 }
 ';
 file_put_contents('sphinx.conf', $config);
@@ -237,8 +235,6 @@ index $wiki[name]
     rt_field        = category_search
     rt_attr_bigint  = date_insert
     rt_attr_bigint  = date_modify
-    enable_star     = 1
-    charset_type    = utf-8
     charset_table   = 0..9, A..Z->a..z, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F
     blend_chars     = _, -, &, +, @, $
     morphology      = stem_enru
