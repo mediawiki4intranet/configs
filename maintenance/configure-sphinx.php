@@ -235,7 +235,7 @@ index $wiki[name]
     rt_field        = category_search
     rt_attr_bigint  = date_insert
     rt_attr_bigint  = date_modify
-    charset_table   = 0..9, A..Z->a..z, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F
+    charset_table   = 0..9, A..Z->a..z, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F, U+401->U+435, U+451->U+435
     blend_chars     = _, -, &, +, @, $
     morphology      = stem_enru
     min_word_len    = 2
@@ -276,10 +276,9 @@ index main_$wiki[name]
     morphology    = stem_enru
     #stopwords    = /var/lib/sphinxsearch/data/stopwords.txt
     min_word_len  = 2
-    #min_infix_len = 1
     enable_star   = 1
     charset_type  = utf-8
-    charset_table = 0..9, A..Z->a..z, _, -, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F
+    charset_table = 0..9, A..Z->a..z, _, -, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F, U+401->U+435, U+451->U+435
 }
 
 index inc_$wiki[name] : main_$wiki[name]
