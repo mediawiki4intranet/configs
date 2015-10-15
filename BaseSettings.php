@@ -116,6 +116,15 @@ if (version_compare(PHP_VERSION, '5.3', '>='))
     spl_autoload_register('wfAutoloadClassSettings', true, true);
 }
 
+// Register skins
+require_once("$IP/skins/CologneBlue/CologneBlue.php");
+require_once("$IP/skins/Vector/Vector.php");
+require_once("$IP/skins/MonoBook/MonoBook.php");
+require_once("$IP/skins/Nostalgia/Nostalgia.php");
+require_once("$IP/skins/Modern/Modern.php");
+wfLoadSkin('cleanmonobook');
+wfLoadSkin('custisru');
+
 require_once($IP.'/extensions/ParserFunctions/ParserFunctions.php');
 $wgPFStringLengthLimit = 4000;
 $wgPFEnableStringFunctions = true;
@@ -314,8 +323,9 @@ $wgLogo    = "$wgScriptPath/configs/logos/wiki4intranet-logo.png";
 $wgFavicon = "$wgScriptPath/configs/favicons/wiki4intranet.ico";
 
 $wgDebugLogFile = false;
+$wgDebugDumpSqlLength = 0;
 
-$wgDefaultSkin = 'monobook';
+$wgDefaultSkin = 'vector';
 
 $wgGroupPermissions['*']['edit'] = false;
 
