@@ -7,8 +7,8 @@
 setlocale(LC_ALL, 'ru_RU.UTF-8');
 setlocale(LC_NUMERIC, 'C');
 
-if (defined('MW_INSTALL_PATH'))
-    $IP = MW_INSTALL_PATH;
+if (getenv('MW_INSTALL_PATH'))
+    $IP = getenv('MW_INSTALL_PATH');
 else
 {
     foreach (debug_backtrace() as $frame)
