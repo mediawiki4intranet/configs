@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2014-01-14
+ * Version: 2015-10-27
  *
  * Repo commands:
  *
@@ -858,7 +858,7 @@ Supported revision control systems (vcs/method):
                 " && $git --work-tree=\"$dest\" checkout --force \"$branch\"",
                 $cb, $name);
         }
-        elseif (!empty($cfg['rebase']))
+        elseif (!empty($cfg['rebase']) && JobControl::shell_exec("$git rev-parse --verify --quiet \"origin/$branch\""))
         {
             // "Conditional rebase" for patch series (when A-B-C-D-E-F may become A-B-C-X-Y-Z)
             // Also this mode should be always used when switching between repositories -
