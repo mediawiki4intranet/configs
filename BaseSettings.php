@@ -83,6 +83,9 @@ $wgFileExtensions = array(
     'djvu', 'pdf', 'xml', 'mm'
 );
 
+// Allow HTML e-mail (requires PEAR Mail_mime package to be installed, php-mail-mime in Debian)
+$wgAllowHTMLEmail = true;
+
 // Allow URL uploads
 $wgAllowCopyUploads = true;
 $wgCopyUploadsFromSpecialUpload = true;

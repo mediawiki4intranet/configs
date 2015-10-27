@@ -6,8 +6,6 @@ require_once(dirname(__FILE__).'/BaseSettings.php');
 
 $wgPageShowWatchingUsers = true;
 
-require_once($IP.'/extensions/EnotifDiff/EnotifDiff.php');
-
 $wgEnableEmail         = true;
 $wgEnableUserEmail     = true;
 $wgEnotifUserTalk      = true; // UPO
