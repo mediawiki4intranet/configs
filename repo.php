@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2015-11-05
+ * Version: 2015-11-06
  *
  * Repo commands:
  *
@@ -821,22 +821,14 @@ Supported revision control systems (vcs/method):
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
         $args = " --branch \"$branch\" \"$repo\"";
-        if (file_exists($dest))
-        {
-            JobControl::spawn(
-                "git init --bare \"$dest/.git\"".
-                " ; git --git-dir=\"$dest/.git\" config core.bare false".
-                " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
-                " ; git --git-dir=\"$dest/.git\" fetch --progress origin \"$branch\"".
-                " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
-                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
-                $cb, $name);
-        }
-        else
-        {
-            @mkdir($dest, 0777, true);
-            JobControl::spawn("git clone --progress $args \"$dest\"", $cb, $name);
-        }
+        JobControl::spawn(
+            "git init --bare \"$dest/.git\"".
+            " ; git --git-dir=\"$dest/.git\" config core.bare false".
+            " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
+            " ; git --git-dir=\"$dest/.git\" fetch --progress origin \"$branch\"".
+            " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
+            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
+            $cb, $name);
     }
 
     function update_git_rw($cfg, $cb, $name)
