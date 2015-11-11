@@ -240,7 +240,6 @@ require_once($IP.'/extensions/FlvHandler/FlvHandler.php');
 # SemanticMediaWiki
 if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
 {
-    require_once($IP.'/extensions/Validator/Validator.php');
     $smwgNamespaceIndex = 120;
     require_once($IP.'/extensions/SemanticMediaWiki/SemanticMediaWiki.php');
     require_once($IP.'/extensions/SemanticInternalObjects/SemanticInternalObjects.php');
@@ -248,7 +247,7 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     $smwgQMaxDepth = 16;
 
     $wgExtensionFunctions[] = 'autoEnableSemantics';
-    $wgClassSettings['SMWResultPrinter']['maxRecursionDepth'] = 15;
+    $wgClassSettings['SMW\ResultPrinter']['maxRecursionDepth'] = 15;
     function autoEnableSemantics()
     {
         global $wgServer;
