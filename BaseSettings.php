@@ -243,6 +243,9 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     $smwgNamespaceIndex = 120;
     require_once($IP.'/extensions/SemanticMediaWiki/SemanticMediaWiki.php');
     require_once($IP.'/extensions/SemanticInternalObjects/SemanticInternalObjects.php');
+    require_once($IP.'/extensions/SemanticForms/SemanticForms.php');
+    require_once($IP.'/extensions/SemanticFormsInputs/SemanticFormsInputs.php');
+    require_once($IP.'/extensions/SemanticFormsSelect/SemanticFormsSelect.php');
     $smwgQMaxSize = 128;
     $smwgQMaxDepth = 16;
 
