@@ -20,7 +20,7 @@ $wgArticlePath = "/$1";
 #
 # Подробнее см. http://wiki.4intra.net/Mediawiki4Intranet, секция "Короткие URL"
 
-require_once("$IP/extensions/OpenID/OpenID.setup.php");
+require_once("$IP/extensions/OpenID/OpenID.php");
 
 $wgCookieExpiration = 30 * 86400;
 
