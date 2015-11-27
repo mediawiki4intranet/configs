@@ -22,10 +22,9 @@ $wgDjvuTxt = "djvutxt";
 $wgDjvuPostProcessor = "ppmtojpeg";
 $wgDjvuOutputExtension = 'jpg';
 
-$wgPdfProcessor = 'nice -n 20 gs';
+$wgPdfToCairo = 'nice -n 20 pdftocairo';
 $wgPdftoText = ''; // it's useless, disable
 $wgPdfCreateThumbnailsInJobQueue = true;
-$wgPdfDpiRatio = 2;
 
 $wgDiff3 = '/usr/bin/diff3';
 
