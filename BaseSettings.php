@@ -126,6 +126,8 @@ require_once("$IP/skins/MonoBook/MonoBook.php");
 require_once("$IP/skins/Nostalgia/Nostalgia.php");
 require_once("$IP/skins/Modern/Modern.php");
 wfLoadSkin('cleanmonobook');
+wfLoadSkin('cleanvector');
+wfLoadSkin('noleftvector');
 wfLoadSkin('custisru');
 
 require_once($IP.'/extensions/ParserFunctions/ParserFunctions.php');
