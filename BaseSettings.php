@@ -250,6 +250,7 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     require_once($IP.'/extensions/SemanticFormsSelect/SemanticFormsSelect.php');
     require_once($IP.'/extensions/SemanticResultFormats/SemanticResultFormats.php');
     require_once($IP.'/extensions/Arrays/Arrays.php');
+    require_once($IP.'/extensions/Loops/Loops.php');
     $baseDir = $IP.'/extensions/SemanticResultFormats';
     $wgAutoloadClasses += array(
         'ProcessEdge' => $baseDir . '/formats/graphviz/SRF_Process.php',
@@ -329,6 +330,7 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
 
     $wgExtensionFunctions[] = 'autoEnableSemantics';
     $wgClassSettings['SMW\ResultPrinter']['maxRecursionDepth'] = 15;
+
     function autoEnableSemantics()
     {
         global $wgServer;
