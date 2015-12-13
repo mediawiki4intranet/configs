@@ -177,6 +177,8 @@ require_once($IP.'/extensions/WikiEditorInplace/WikiEditorInplace.php');
 
 require_once($IP.'/extensions/SVGEdit/SVGEdit.php');
 
+require_once($IP.'/extensions/MsUpload/MsUpload.php');
+
 $wgGroupPermissions['bureaucrat']['usermerge'] = true;
 require_once($IP.'/extensions/UserMerge/UserMerge.php');
 require_once($IP.'/extensions/Renameuser/Renameuser.php');
