@@ -209,8 +209,6 @@ $wgDefaultUserOptions['wpnumberheadings'] = 1;
 require_once($IP.'/extensions/MediaFunctions/MediaFunctions.php');
 require_once($IP.'/extensions/AllowGetParamsInWikilinks/AllowGetParamsInWikilinks.php');
 require_once($IP.'/extensions/WikiBookmarks/WikiBookmarks.php');
-require_once($IP.'/extensions/SWFUpload/SWFUpload.php');
-require_once($IP.'/extensions/SupaMW/SupaMW.php');
 require_once($IP.'/extensions/UserMagic/UserMagic.php');
 require_once($IP.'/extensions/S5SlideShow/S5SlideShow.php');
 require_once($IP.'/extensions/UserMessage/UserMessage.php');
