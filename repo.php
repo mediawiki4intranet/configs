@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2015-11-06
+ * Version: 2016-01-30
  *
  * Repo commands:
  *
@@ -825,7 +825,7 @@ Supported revision control systems (vcs/method):
             "git init --bare \"$dest/.git\"".
             " ; git --git-dir=\"$dest/.git\" config core.bare false".
             " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
-            " ; git --git-dir=\"$dest/.git\" fetch --progress origin \"$branch\"".
+            " ; git --git-dir=\"$dest/.git\" fetch --no-recurse-submodules --progress origin \"$branch\"".
             " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
             $cb, $name);
@@ -846,7 +846,7 @@ Supported revision control systems (vcs/method):
                 " ; $git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
                 " ; $git config \"branch.$branch.remote\" origin".
                 " ; $git config \"branch.$branch.merge\" \"refs/heads/$branch\"".
-                " ; $git fetch --progress --depth=1000000000 origin".
+                " ; $git fetch --no-recurse-submodules --progress --depth=1000000000 origin".
                 " && $git --work-tree=\"$dest\" checkout --force \"$branch\"",
                 $cb, $name);
         }
@@ -879,7 +879,7 @@ Supported revision control systems (vcs/method):
                 $rev = trim(JobControl::shell_exec("$git rev-parse \"old/$branch\""));
                 JobControl::spawn(
                     "$git config --replace-all remote.origin.url \"$repo\"".
-                    " && $git --work-tree=\"$dest\" fetch --progress origin".
+                    " && $git --work-tree=\"$dest\" fetch --no-recurse-submodules --progress origin".
                     " && $git --work-tree=\"$dest\" rebase --onto \"origin/$branch\" $rev \"$branch\"".
                     " && ($git branch -D \"old/$branch\" >/dev/null)",
                     $cb, $name);
@@ -896,7 +896,7 @@ Supported revision control systems (vcs/method):
             // Normal update
             JobControl::spawn(
                 "$git config --replace-all remote.origin.url \"$repo\"".
-                " && $git --work-tree=\"$dest\" fetch --progress origin".
+                " && $git --work-tree=\"$dest\" fetch --no-recurse-submodules --progress origin".
                 " && $git --work-tree=\"$dest\" checkout \"$branch\"".
                 " && $git --work-tree=\"$dest\" merge \"origin/$branch\"",
                 $cb, $name);
