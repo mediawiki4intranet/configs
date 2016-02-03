@@ -375,6 +375,7 @@ $wgNamespacesWithSubpages += array(
     NS_QUIZ     => true,
     NS_QUIZ_TALK => true,
 );
+$wgExtraSignatureNamespaces = array_keys($wgNamespacesWithSubpages);
 
 # TemplatedPageList
 require_once($IP.'/extensions/TemplatedPageList/TemplatedPageList.php');
