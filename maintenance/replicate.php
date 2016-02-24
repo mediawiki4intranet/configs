@@ -258,7 +258,8 @@ function login_into($params, $desc)
     {
         throw new ReplicateException("Invalid response status");
     }
-    if (!preg_match('/<input[^<>]*name="wpLoginToken"[^<>]*value="([^"]+)"[^<>]*>/s', $content, $m))
+    if (!preg_match('/<input[^<>]*name="wpLoginToken"[^<>]*value="([^"]+)"[^<>]*>/s', $content, $m) &&
+        !preg_match('/<input[^<>]*value="([^"]+)"[^<>]*name="wpLoginToken"[^<>]*>/s', $content, $m))
     {
         throw new ReplicateException("No input name=wpLoginToken found");
     }
