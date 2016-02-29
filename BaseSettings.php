@@ -100,25 +100,6 @@ $wgLanguageCode = "ru";
 $wgSMTP = false;
 $wgShowExceptionDetails = true;
 
-// Put settings (public static field changes) for autoloaded classes here
-$wgClassSettings = array();
-if (version_compare(PHP_VERSION, '5.3', '>='))
-{
-    function wfAutoloadClassSettings($class)
-    {
-        global $wgClassSettings;
-        if (isset($wgClassSettings[$class]))
-        {
-            AutoLoader::autoload($class);
-            foreach ($wgClassSettings[$class] as $name => $value)
-            {
-                $class::$$name = $value;
-            }
-        }
-    }
-    spl_autoload_register('wfAutoloadClassSettings', true, true);
-}
-
 // Register skins
 require_once("$IP/skins/CologneBlue/CologneBlue.php");
 require_once("$IP/skins/Vector/Vector.php");
@@ -328,10 +309,8 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     $smwgQMaxSize = 128;
     $smwgQMaxDepth = 16;
     $smwgEnabledEditPageHelp = false;
-
+    \SMW\ResultPrinter::$maxRecursionDepth = 15;
     $wgExtensionFunctions[] = 'autoEnableSemantics';
-    $wgClassSettings['SMW\ResultPrinter']['maxRecursionDepth'] = 15;
-
     function autoEnableSemantics()
     {
         global $wgServer;
