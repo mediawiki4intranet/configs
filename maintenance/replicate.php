@@ -446,7 +446,7 @@ function replicate($src, $dest)
     repl_log(sprintf("Imported in %.2f seconds", $tp-$tx));
     // Extract the import report
     $report = '';
-    if (preg_match('/<!--\s*start\s*content\s*-->.*?<ul>/is', $text, $m, PREG_OFFSET_CAPTURE))
+    if (preg_match('/(?:<!--\s*start\s*content\s*-->|<div[^<>]*mw-content-text[^<>]*>).*?<ul>/is', $text, $m, PREG_OFFSET_CAPTURE))
     {
         $report = substr($text, $m[0][1]+strlen($m[0][0]));
         if (($p = stripos($report, '</ul')) !== false)
