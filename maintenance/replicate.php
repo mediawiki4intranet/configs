@@ -432,7 +432,7 @@ function replicate($src, $dest)
     list($status, $text) = POST($dest, "/index.php?title=Special:Import&action=submit", array(
         'source' => 'upload',
         'editToken' => $token,
-        'xmlimport' => '@'.$fn,
+        'xmlimport' => function_exists('curl_file_create') ? curl_file_create($fn) : '@'.$fn,
     ));
     if ($status != 200)
     {
