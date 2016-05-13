@@ -449,6 +449,9 @@ $wgAllowedRawCTypes = true;
 $wgDefaultUserOptions['vector-simplesearch'] = true;
 $wgVectorUseSimpleSearch = true;
 
+// Do not spawn a lot more apache processes
+$wgRunJobsAsync = false;
+
 function efPoweredBy4Intranet()
 {
     global $wgFooterIcons, $wgScriptPath;
