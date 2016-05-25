@@ -20,7 +20,8 @@ $wgArticlePath = "/$1";
 #
 # Подробнее см. http://wiki.4intra.net/Mediawiki4Intranet, секция "Короткие URL"
 
-require_once("$IP/extensions/OpenID/OpenID.php");
+// OpenID is disabled by default because it opens a way for spammers
+//require_once("$IP/extensions/OpenID/OpenID.php");
 
 $wgCookieExpiration = 30 * 86400;
 
@@ -31,15 +32,18 @@ $wgGroupPermissions['*']['createpage'] = false;
 $wgGroupPermissions['*']['createtalk'] = false;
 $wgGroupPermissions['*']['import'] = false;
 $wgGroupPermissions['*']['importupload'] = false;
+$wgGroupPermissions['*']['wl-postcomment'] = false;
 $wgGroupPermissions['user']['delete'] = false;
 $wgGroupPermissions['user']['undelete'] = false;
 $wgGroupPermissions['user']['createpage'] = false;
 $wgGroupPermissions['user']['createtalk'] = false;
 $wgGroupPermissions['user']['movefile'] = false;
+$wgGroupPermissions['user']['wl-postcomment'] = false;
 $wgGroupPermissions['autoconfirmed']['createpage'] = true;
 $wgGroupPermissions['autoconfirmed']['createtalk'] = true;
 $wgGroupPermissions['autoconfirmed']['import'] = true;
 $wgGroupPermissions['autoconfirmed']['importupload'] = false;
+$wgGroupPermissions['autoconfirmed']['wl-postcomment'] = true;
 $wgGroupPermissions['sysop']['createpage'] = true;
 $wgGroupPermissions['sysop']['createtalk'] = true;
 $wgGroupPermissions['bureaucrat']['createpage'] = true;
