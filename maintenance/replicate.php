@@ -393,6 +393,7 @@ function replicate($src, $dest)
     $params = array(
         'images' => 1,
         'selfcontained' => 1,
+        'format' => 'multipart-zip',
         'wpDownload' => 1,
         'pages' => $text,
         'curonly' => 1,
