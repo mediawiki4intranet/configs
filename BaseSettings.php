@@ -310,6 +310,7 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     $smwgQMaxDepth = 16;
     $smwgEnabledEditPageHelp = false;
     $smwgEnabledQueryDependencyLinksStore = true;
+    $smwgEnabledHttpDeferredJobRequest = false;
     \SMW\ResultPrinter::$maxRecursionDepth = 15;
     $wgExtensionFunctions[] = 'autoEnableSemantics';
     function autoEnableSemantics()
