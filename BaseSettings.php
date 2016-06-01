@@ -197,6 +197,7 @@ require_once($IP.'/extensions/S5SlideShow/S5SlideShow.php');
 require_once($IP.'/extensions/UserMessage/UserMessage.php');
 require_once($IP.'/extensions/PlantUML/PlantUML.php');
 require_once($IP.'/extensions/HttpAuth/HttpAuth.php');
+require_once($IP.'/extensions/AjaxLoader/AjaxLoader.php');
 require_once($IP.'/extensions/SimpleForms/SimpleForms.php'); /* useful at least for {{#request:...}} */
 require_once($IP.'/extensions/WhoIsWatching/WhoIsWatching.php');
 require_once($IP.'/extensions/Polls/poll.php');
