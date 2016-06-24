@@ -248,9 +248,9 @@ function POST($wiki, $url, $params, $filename = NULL)
 }
 
 // Login into wiki described by $params
-function login_into($params, $desc)
+function login_into(&$params, $desc)
 {
-    if (empty($params['user']) || empty($params['password']))
+    if (empty($params['user']) || empty($params['password']) || !empty($params['AUTH_DONE']))
     {
         return '';
     }
@@ -278,6 +278,7 @@ function login_into($params, $desc)
     {
         throw new ReplicateException("Incorrect login (no redirection, status=$status)");
     }
+    $params['AUTH_DONE'] = true;
 }
 
 // Generate export page list from wiki $wiki using $params and $desc as error description
@@ -402,7 +403,7 @@ function getEditToken($wiki, $url, $input)
     return $m[1];
 }
 
-function copyPages($src, $dest)
+function copyPages(&$src, &$dest)
 {
     global $since_time, $ignore_since_images;
     // Login into source wiki
@@ -484,13 +485,16 @@ function copyPages($src, $dest)
     unlink($fn);
 }
 
-function removePages($src, $dest)
+function removePages(&$src, &$dest)
 {
     // Mirror deletions: retrieve full page list from source wiki, retrieve full page list from destination wiki,
     // compare them and remove missing pages using Special:BatchEditor
+    repl_log("Diffing page lists in source and destination wiki");
+    login_into($src, 'source wiki');
     $srcPages = page_list($src);
     if (!$srcPages)
         throw new ReplicateException("Could not retrieve full page list from source wiki");
+    login_into($dest, 'destination wiki');
     $destParams = $dest;
     unset($destParams['category']);
     unset($destParams['categorywithclosure']);
