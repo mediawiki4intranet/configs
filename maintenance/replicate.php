@@ -1,13 +1,13 @@
 #!/usr/bin/php
 <?php
 /**
- * TODO maybe use API? But this will add a dependency to JSON/XML/whatever.
- *
  * A script for MediaWiki4Intranet page replication, with support for:
  * - Automatic replication of templates and images used in the articles
  * - Incremental replication
  * REQUIRES modified MediaWiki import/export mechanism, see MediaWiki4Intranet patch:
  * http://wiki.4intra.net/MW_Import_Export
+ *
+ * Version: 2016-06-24
  *
  * Скрипт для репликации вики-страниц между разными MediaWiki, поддерживает:
  * - Автоматическую репликацию шаблонов и изображений, использованных в статьях
@@ -68,6 +68,7 @@ BasicLogin=<HTTP basic auth username, if needed>
 BasicPassword=<HTTP basic auth password, if needed>
 User=<name of a user having import rights in destination wiki>
 Password=<his password>
+MirrorDeletions=<'yes' or 'no' (default)>
 
 EOF;
 
@@ -377,6 +378,32 @@ function page_list($src, $modifydate = '', $ignore_since_images = false)
 
 function replicate($src, $dest)
 {
+    copyPages($src, $dest);
+    if (!empty($dest['mirrordeletions']))
+    {
+        removePages($src, $dest);
+    }
+}
+
+function getEditToken($wiki, $url, $input)
+{
+    list($status, $text) = GET($wiki, $url);
+    if ($status != 200)
+    {
+        throw new ReplicateException("Could not retrieve $url: HTTP $status");
+    }
+    preg_match('/<input([^<>]*name="'.$input.'"[^<>]*)>/is', $text, $m);
+    if (!$m)
+    {
+        $text = preg_replace('/^.*<!-- start content -->(.*)<!-- end content -->.*$/is', '\1', $text);
+        throw new ReplicateException("No $input input found. Content was:\n".trim($text));
+    }
+    preg_match('/value=\"([^\"]*)\"/is', $m[1], $m);
+    return $m[1];
+}
+
+function copyPages($src, $dest)
+{
     global $since_time, $ignore_since_images;
     // Login into source wiki
     login_into($src, 'source wiki');
@@ -384,7 +411,8 @@ function replicate($src, $dest)
     $text = page_list($src, $since_time, $ignore_since_images);
     if (!$text)
     {
-        throw new ReplicateException("No pages need replication in source wiki");
+        repl_log("No pages need replication in source wiki");
+        return;
     }
     repl_log(substr_count($text, "\n")." pages listed");
     $ts = microtime(true);
@@ -416,19 +444,7 @@ function replicate($src, $dest)
     // Login into destination wiki
     login_into($dest, 'destination wiki');
     // Retrieve token for importing
-    list($status, $text) = GET($dest, "/index.php?title=Special:Import");
-    if ($status != 200)
-    {
-        throw new ReplicateException("Could not retrieve Special:Import page");
-    }
-    preg_match('/<input([^<>]*name="editToken"[^<>]*)>/is', $text, $m);
-    if (!$m)
-    {
-        $text = preg_replace('/^.*<!-- start content -->(.*)<!-- end content -->.*$/is', '\1', $text);
-        throw new ReplicateException("No editToken on Special:Import. Content was:\n".trim($text));
-    }
-    preg_match('/value=\"([^\"]*)\"/is', $m[1], $m);
-    $token = $m[1];
+    $token = getEditToken($dest, "/index.php?title=Special:Import", 'editToken');
     // Run import
     list($status, $text) = POST($dest, "/index.php?title=Special:Import&action=submit", array(
         'source' => 'upload',
@@ -466,6 +482,40 @@ function replicate($src, $dest)
     }
     repl_log("Report:\n$report");
     unlink($fn);
+}
+
+function removePages($src, $dest)
+{
+    // Mirror deletions: retrieve full page list from source wiki, retrieve full page list from destination wiki,
+    // compare them and remove missing pages using Special:BatchEditor
+    $srcPages = page_list($src);
+    if (!$srcPages)
+        throw new ReplicateException("Could not retrieve full page list from source wiki");
+    $destParams = $dest;
+    unset($destParams['category']);
+    unset($destParams['categorywithclosure']);
+    unset($destParams['notcategory']);
+    $destPages = page_list($destParams + $src);
+    if (!$destPages)
+        throw new ReplicateException("Could not retrieve full page list from destination wiki");
+    $srcPages = array_flip(array_filter(explode("\n", $srcPages)));
+    $destPages = array_flip(array_filter(explode("\n", $destPages)));
+    foreach ($srcPages as $p => $true)
+        unset($destPages[$p]);
+    if ($destPages)
+    {
+        $destPages = implode("\n", array_keys($destPages));
+        repl_log("Removing pages:\n".$destPages);
+        $token = getEditToken($dest, "/index.php?title=Special:DeleteBatch", 'wpEditToken');
+        list($status, $content) = POST($dest, "/index.php?title=Special:DeleteBatch&action=submit", array(
+            'wpMode' => 'script',
+            'wpPage' => $destPages,
+            'wpEditToken' => $token,
+            'wpdeletebatchSubmit' => 'Delete',
+        ));
+        if ($status != 200)
+            throw new ReplicateException("Special:DeleteBatch failed, HTTP $status");
+    }
 }
 
 // Read ini-like config file from $file
@@ -512,7 +562,7 @@ function read_config($file)
             {
                 $v = rtrim($v, '/');
             }
-            elseif ($k == 'fullhistory' || $k == 'removeconfidential')
+            elseif ($k == 'fullhistory' || $k == 'removeconfidential' || $k == 'mirrordeletions')
             {
                 $v = strtolower($v);
                 $v = $v == 'yes' || $v == 'true' || $v == 'on' || $v == '1';
