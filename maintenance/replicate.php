@@ -274,7 +274,7 @@ function login_into($params, $desc)
             'wpLoginToken' => $token,
         )
     );
-    if ($status != 302)
+    if ($status != 302 && !preg_match('/mw\.config\.set\(\{[^\}]*?"wgUserName":"'.str_replace('/', '\\/', preg_quote($params['user'])).'"/', $content))
     {
         throw new ReplicateException("Incorrect login (no redirection, status=$status)");
     }
