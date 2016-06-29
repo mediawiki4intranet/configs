@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2016-01-30
+ * Version: 2016-06-29
  *
  * Repo commands:
  *
@@ -56,7 +56,7 @@ class Repo
     var $prefixes = array();
     var $dist = array();
     var $localindex_file, $localindex = array('params' => array(), 'revs' => array());
-    var $distindex_file, $distindex = array();
+    var $distindex_file, $distindex = array(), $distindexes = array();
     var $included_distindex = array();
 
     var $dist_name;
@@ -246,7 +246,6 @@ Supported revision control systems (vcs/method):
             print "Distribution not specified, exiting\n";
             exit(1);
         }
-        $this->dist_cfg = $this->cfg_dir."/{$this->dist_name}.ini";
     }
 
     /**
@@ -265,32 +264,40 @@ Supported revision control systems (vcs/method):
         }
         if ($this->distindex)
         {
-            // Remove components with versions equal to ones in parent distribution
-            foreach ($this->included_distindex as $k => $rev)
+            // Move distindex entries to their own distindexes
+            $this_index = [];
+            foreach ($this->distindex as $k => $rev)
             {
-                if (isset($this->distindex[$k]) && $this->distindex[$k] === $rev)
+                if (isset($this->dist[$k]))
                 {
-                    unset($this->distindex[$k]);
+                    $taken = $this->dist[$k]['taken_from'];
+                    if ($taken == $this->dist_name)
+                        $this_index[$k] = $rev;
+                    else
+                        $this->distindexes[$taken][$k] = $rev;
                 }
             }
-            // Update distribution index
-            write_ini_file($this->distindex_file, $this->distindex);
+            // Update distribution indexes
+            write_ini_file($this->distindex_file, $this_index);
+            foreach ($this->distindexes as $dist => $index)
+                write_ini_file($this->cfg_dir.'/'.$dist.'-index.ini', $index);
         }
     }
 
     /**
      * Parse distribution config INI file
      */
-    function parse_config($cfg = false)
+    function parse_config($dist_name = false)
     {
-        if (!$cfg)
+        if (!$dist_name)
         {
-            $cfg = $this->dist_cfg;
+            $dist_name = $this->dist_name;
         }
-        $dist = parse_ini_file($cfg, true);
+        $cfgfile = $this->cfg_dir."/$dist_name.ini";
+        $dist = parse_ini_file($cfgfile, true);
         if (!$dist)
         {
-            print "$cfg is corrupt or does not exist, exiting\n";
+            print "$cfgfile is corrupt or does not exist, exiting\n";
             exit(2);
         }
         if (isset($dist['_params']))
@@ -299,11 +306,11 @@ Supported revision control systems (vcs/method):
             {
                 foreach ((array)$dist['_params']['include'] as $included_dist)
                 {
-                    $this->parse_config($this->cfg_dir.'/'.$included_dist.'.ini');
+                    $this->parse_config($included_dist);
                     $included_distindex_file = $this->cfg_dir.'/'.$included_dist.'-index.ini';
                     if (file_exists($included_distindex_file))
                     {
-                        $di = parse_ini_file($included_distindex_file, true) ?: array();
+                        $di = $this->distindexes[$included_dist] = parse_ini_file($included_distindex_file, true) ?: array();
                         $this->included_distindex = $di + $this->included_distindex;
                     }
                 }
@@ -337,6 +344,7 @@ Supported revision control systems (vcs/method):
                 print "$cfg is corrupt, exiting\n";
                 exit(2);
             }
+            $cfg['taken_from'] = $dist_name;
             $this->dist[self::canonical_path($path)] = $cfg;
         }
     }
@@ -517,7 +525,7 @@ Supported revision control systems (vcs/method):
             {
                 // Pull to configuration repository and check for conflicts
                 $code = JobControl::spawn(
-                    "git $wc checkout -- {$this->dist_name}-index.ini 2>/dev/null".
+                    "git $wc checkout -- *-index.ini 2>/dev/null".
                     " ; git $wc pull --ff-only".
                     false, false
                 );
