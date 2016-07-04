@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2016-06-30
+ * Version: 2016-07-04
  *
  * Repo commands:
  *
@@ -524,11 +524,16 @@ Supported revision control systems (vcs/method):
             else
             {
                 // Pull to configuration repository and check for conflicts
-                $inis = "{$this->dist_name}-index.ini";
-                foreach ($this->distindexes as $dist => $index)
-                    $inis .= " $dist-index.ini";
+                $ls = explode("\n", JobControl::shell_exec("git $wc ls-tree HEAD:./"));
+                $inis = '';
+                foreach ($ls as $f)
+                {
+                    $f = trim($f);
+                    if (substr($f, -10) === '-index.ini')
+                        $inis .= ' '.preg_replace('/^.*\s+/s', '', $f);
+                }
                 $code = JobControl::spawn(
-                    "git $wc checkout -- $inis 2>/dev/null".
+                    "git $wc checkout --$inis 2>/dev/null".
                     " ; git $wc pull --ff-only".
                     false, false
                 );
