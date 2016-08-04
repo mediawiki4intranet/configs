@@ -265,11 +265,6 @@ function login_into(&$params, $desc)
         throw new ReplicateException("No input name=wpLoginToken found");
     }
     $token = $m[1];
-    if (!empty($params['loginpause']))
-    {
-        // SOMETIMES php does not succeed to save session data in time and fails to check the login token during next request.
-        sleep(intval($params['loginpause']));
-    }
     list($status, $content) = POST(
         $params, '/index.php?title=Special:UserLogin&action=submitlogin&type=login',
         array(
