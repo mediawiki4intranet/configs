@@ -1010,6 +1010,7 @@ class JobControl
         $stopped = 0;
         while (($pid = pcntl_waitpid($needpid, $st, WNOHANG)) > 0)
         {
+            var_dump($pid);
             $code = pcntl_wexitstatus($st);
             if (!empty(self::$childProcs[$pid]))
             {
