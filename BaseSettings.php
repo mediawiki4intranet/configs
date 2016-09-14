@@ -368,9 +368,9 @@ $egSubpagelistAjaxDisableRE = '#^Блог:[^/]*$#s';
 $wgMaxFilenameLength = 50;
 $wgGalleryOptions['captionLength'] = 50; // 1.18
 
-$wgSVGConverter = "inkscape";
 $wgUseImageMagick = false;
 $wgGDAlwaysResample = true;
+$wgSVGConverter = 'rsvg';
 
 require_once($IP . '/includes/GlobalFunctions.php');
 if (wfIsWindows())
