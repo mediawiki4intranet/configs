@@ -69,7 +69,6 @@ $wgImageMagickConvertCommand = "convert";
 # sure that cached pages are cleared.
 $wgCacheEpoch = max( $wgCacheEpoch, gmdate( 'YmdHis', @filemtime( __FILE__ ) ) );
 $wgMainCacheType = empty( $_SERVER['SERVER_NAME'] ) ? CACHE_NONE : CACHE_ACCEL;
-$wgParserCacheType = $wgMessageCacheType = $wgMainCacheType;
 $wgMemCachedServers = array();
 
 $wgRawHtml = true;
