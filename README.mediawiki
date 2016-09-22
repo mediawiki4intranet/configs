@@ -10,29 +10,39 @@ intranet) usage. It is also important that mostly all of these
 extensions are improved and tested to work together — integration
 bugs are fixed and some new features are added.
 
-== System Requirements ==
+== Installing via Docker ==
+
+Mediawiki4Intranet requires a lot of additional system software,
+so the simplest way to install it is by using a Docker script.
+
+Take it from here: https://github.com/mediawiki4intranet/docker
+
+There is a README
+
+== Manual Installation ==
+
+=== System Requirements ===
 
 Minimal requirements:
-* PHP 5.2 or later. 5.3 or later is recommended.
-* Web server. The simplest is to use Apache, nginx with php_fpm also works, IIS and others are also supported in theory.
-* MySQL DBMS version 5 or later.
-* UNIX-like system is preferred.
+* PHP 5.3 or later (PHP 7 is supported).
+* Web server: nginx + php_fpm is the best. You may use Apache if you want.
+* MySQL/MariaDB >= 5.1 or PostgreSQL >= 9.0.
+* Debian Linux is preferred.
+* You may use any other Linux distro or FreeBSD, but it's harder to install all required software there.
+* Other UNIX-like OSes or Windows may also work, but with problems.
 
 PHP extensions:
-* php5-mysql or php5-mysqli for interaction with the database.
-* php5-gd for images.
-* php5-curl for uploading files via URL.
+* php-mysqlnd / php-pgsql for interaction with the database (mysql / postgresql)
+* php-gd
+* php-curl for uploading files via URL.
+* PHP opcode cacher (APC, XCache, ZendOpCache) is highly recommended
+* Under PHP < 5.6, [http://wiki.4intra.net/Mediawiki4Intranet#php5-fss php5-fss] for faster string operations
+* Mail and Net_SMTP PEAR packages for e-mail.
 
 PHP configuration (php.ini):
-* <tt>error_reporting = E_ALL & ~E_NOTICE</tt>
+* post_max_size, upload_max_filesize = 128M or more
 * If your PHP is &lt; 5.3: <tt>short_open_tag = Off</tt>
-* <tt>magic_quotes_gpc = Off</tt> (should be Off on every web server which respects itself)
-* For [http://supa.sourceforge.net SUPA] screenshot upload: either ''disabled'' [http://www.hardened-php.net/suhosin/ Suhosin], or <tt>suhosin.post.max_value_length = 8000000</tt> and <tt>suhosin.request.max_value_length = 8000000</tt>. 8000000 is an example, you can set a bigger value.
-
-Optional PHP extensions:
-* PHP opcode cacher, like APC or XCache for overall performance.
-* [http://wiki.4intra.net/Mediawiki4Intranet#php5-fss php5-fss] for faster string operations.
-* Mail and Net_SMTP PEAR packages for e-mail.
+* If your PHP is &lt; 5.4: <tt>magic_quotes_gpc = Off</tt>
 
 A lot of third-party software is also required for different extensions to work;
 GNU/Linux users may usually 'apt-get' them, and Windows users may use our
@@ -55,15 +65,15 @@ standalone bundle (see below).
 If you're on Debian or Ubuntu GNU/Linux distribution, simply run:
 
 <pre>
-apt-get install php5 php5-mysql php5-gd php5-curl php5-apc php-mail php-net-smtp \
-	texlive-base djvulibre-bin netpbm ghostscript poppler-utils \
-	ffmpeg graphviz gnuplot openjdk-6-jre sphinxsearch zip unzip umlet
+apt-get install zip unzip poppler-utils \
+    netpbm librsvg2-bin djvulibre-bin texlive-base texlive-extra-utils ffmpeg \
+    dia graphviz gnuplot plotutils umlet default-jre diffutils imagemagick sphinxsearch \
+    nginx php7.0-fpm php7.0-cli php7.0-json php7.0-opcache php7.0-mbstring php7.0-curl php7.0-gd \
+    php7.0-intl php7.0-mysql php7.0-xml php7.0-zip php-imagick php-apcu php-apcu-bc php-mail php-net-smtp
 </pre>
 
 After running this command, the only software which must be installed manually will be:
-* [http://dvisvgm.sourceforge.net/ dvisvgm]
 * [http://www.umlgraph.org/ UMLGraph]
-* [http://wiki.4intra.net/php5-fss php5-fss]
 * [http://wiki.4intra.net/public/tika-app-1.2-fix-TIKA709-TIKA964.jar Apache Tika]
 
 Downloaded tika-app.jar should be put to system auto-start (for example /etc/rc.local),
@@ -86,7 +96,7 @@ git clone --depth=1 https://github.com/mediawiki4intranet/configs.git mediawiki/
 Run repo.php to fetch the code with all extensions:
 
 <pre>
-php mediawiki/configs/repo.php install mediawiki4intranet
+php mediawiki/configs/repo.php install mediawiki4intranet ro
 </pre>
 
 Create images subdirectory and grant web-server read-write access into it:
@@ -211,20 +221,15 @@ so the resulting repository will be very easy to merge with newer versions of ou
 
 == Standalone Windows bundle ==
 
-As the simplest way to try Mediawiki4Intranet for Must-Die systems (M$ Window$) we have
-a [http://wiki.4intra.net/public/mediawiki4intranet-win.7z standalone bundle] which is
-rarely updated and may not include all the latest features, but does include all the
-software needed to run Mediawiki4Intranet.
+There is an older [http://wiki.4intra.net/public/mediawiki4intranet-win.7z Windows bundle]
+of Mediawiki4Intranet which is rarely updated and does not include all the latest features,
+but you can also try it under Windows.
 
 Just download it, unpack to D:\wiki4intranet\, run D:\wiki4intranet\xampp-control.exe,
 start Apache and MySQL via clicking "Start" buttons, and point your browser to
 http://localhost/wiki/, and login with WikiSysop/Wiki4IntraNet login/password.
 
-It is NOT recommended to use this bundle for production as it IS NOT properly
-and securely configured, not to speak of that it runs on a bad operating system
-made by bad company with bad policies. :)
-
-Use it only if you want to have Mediawiki4Intranet on your local machine with that OS.
+Warning: do NOT use this bundle for production. Consider Docker image instead.
 
 == repo.php TODO ==
 
