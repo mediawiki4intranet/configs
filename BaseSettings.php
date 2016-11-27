@@ -197,7 +197,7 @@ require_once($IP.'/extensions/UserMessage/UserMessage.php');
 require_once($IP.'/extensions/PlantUML/PlantUML.php');
 require_once($IP.'/extensions/HttpAuth/HttpAuth.php');
 require_once($IP.'/extensions/AjaxLoader/AjaxLoader.php');
-require_once($IP.'/extensions/SimpleForms/SimpleForms.php'); /* useful at least for {{#request:...}} */
+require_once($IP.'/extensions/RequestMagic/RequestMagic.php');
 require_once($IP.'/extensions/WhoIsWatching/WhoIsWatching.php');
 require_once($IP.'/extensions/Polls/poll.php');
 require_once($IP.'/extensions/Shortcuts/Shortcuts.php');
