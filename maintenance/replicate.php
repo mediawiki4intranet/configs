@@ -264,19 +264,23 @@ function login_into(&$params, $desc)
     {
         throw new ReplicateException("No input name=wpLoginToken found");
     }
-    $token = $m[1];
-    list($status, $content) = POST(
-        $params, '/index.php?title=Special:UserLogin&action=submitlogin&type=login',
-        array(
-            'wpName' => $params['user'],
-            'wpPassword' => $params['password'],
-            'wpLoginAttempt' => 1,
-            'wpLoginToken' => $token,
-        )
-    );
-    if ($status != 302 && !preg_match('/mw\.config\.set\(\{[^\}]*?"wgUserName":"'.str_replace('/', '\\/', preg_quote($params['user'])).'"/', $content))
+    if (!preg_match('/mw\.config\.set\(\{[^\}]*?"wgUserName":"'.str_replace('/', '\\/', preg_quote($params['user'])).'"/', $content))
     {
-        throw new ReplicateException("Incorrect login (no redirection, status=$status)");
+        // Not logged in yet
+        $token = $m[1];
+        list($status, $content) = POST(
+            $params, '/index.php?title=Special:UserLogin&action=submitlogin&type=login',
+            array(
+                'wpName' => $params['user'],
+                'wpPassword' => $params['password'],
+                'wpLoginAttempt' => 1,
+                'wpLoginToken' => $token,
+            )
+        );
+        if ($status != 302 && !preg_match('/mw\.config\.set\(\{[^\}]*?"wgUserName":"'.str_replace('/', '\\/', preg_quote($params['user'])).'"/', $content))
+        {
+            throw new ReplicateException("Incorrect login (no redirection, status=$status)");
+        }
     }
     $params['AUTH_DONE'] = true;
 }
