@@ -61,6 +61,7 @@ RemoveConfidential=<'yes' or 'no' (default)>
 FullHistory=<'yes' or 'no' (default), 'yes' replicates all page revisions, not only the last one>
 BasicLogin=<HTTP basic auth username, if needed>
 BasicPassword=<HTTP basic auth password, if needed>
+FilesOverHttp=<'yes' or 'no' (default)>
 
 [__Test__DestinationWiki]
 URL=<destination wiki url>
@@ -295,6 +296,10 @@ function page_list_load($wiki, $params)
         throw new ReplicateException("Invalid response status");
     }
     preg_match('#<textarea[^<>]*>([^<]*)</textarea>#is', $content, $m);
+    if (!$m)
+    {
+        throw new ReplicateException("No <textarea> in page list response");
+    }
     return trim($m[1]);
 }
 
@@ -426,7 +431,7 @@ function copyPages(&$src, &$dest)
     $params = array(
         'images' => 1,
         'selfcontained' => 1,
-        'format' => 'multipart-zip',
+        'format' => !empty($src['filesoverhttp']) ? 'xml' : 'multipart-zip',
         'wpDownload' => 1,
         'pages' => $text,
         'curonly' => 1,
@@ -496,16 +501,12 @@ function removePages(&$src, &$dest)
     repl_log("Diffing page lists in source and destination wiki");
     login_into($src, 'source wiki');
     $srcPages = page_list($src);
-    if (!$srcPages)
-        throw new ReplicateException("Could not retrieve full page list from source wiki");
     login_into($dest, 'destination wiki');
     $destParams = $dest;
     unset($destParams['category']);
     unset($destParams['categorywithclosure']);
     unset($destParams['notcategory']);
     $destPages = page_list($destParams + $src);
-    if (!$destPages)
-        throw new ReplicateException("Could not retrieve full page list from destination wiki");
     $srcPages = array_flip(array_filter(explode("\n", $srcPages)));
     $destPages = array_flip(array_filter(explode("\n", $destPages)));
     foreach ($srcPages as $p => $true)
@@ -570,7 +571,7 @@ function read_config($file)
             {
                 $v = rtrim($v, '/');
             }
-            elseif ($k == 'fullhistory' || $k == 'removeconfidential' || $k == 'mirrordeletions')
+            elseif ($k == 'fullhistory' || $k == 'removeconfidential' || $k == 'mirrordeletions' || $k == 'filesoverhttp')
             {
                 $v = strtolower($v);
                 $v = $v == 'yes' || $v == 'true' || $v == 'on' || $v == '1';
