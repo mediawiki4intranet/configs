@@ -517,7 +517,7 @@ function removePages(&$src, &$dest)
         repl_log("Removing pages:\n".$destPages);
         $token = getEditToken($dest, "/index.php?title=Special:DeleteBatch", 'wpEditToken');
         list($status, $content) = POST($dest, "/index.php?title=Special:DeleteBatch&action=submit", array(
-            'wpMode' => 'script',
+            'wpMode' => 'you',
             'wpPage' => $destPages,
             'wpEditToken' => $token,
             'wpdeletebatchSubmit' => 'Delete',
