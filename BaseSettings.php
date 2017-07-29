@@ -426,6 +426,7 @@ $wgRCMaxAge = 50 * 365 * 86400;
 // No need to restrict Intranet users from these actions
 $wgGroupPermissions['user']['delete'] = true;
 $wgGroupPermissions['user']['undelete'] = true;
+$wgGroupPermissions['user']['deletedhistory'] = true;
 $wgGroupPermissions['user']['movefile'] = true;
 $wgGroupPermissions['user']['upload_by_url'] = true;
 $wgGroupPermissions['user']['import'] = true;
