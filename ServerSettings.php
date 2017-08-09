@@ -33,3 +33,8 @@ $wgEnableScaryTranscluding = true;
 
 // Bug 107222 - TikaMW. TODO: enable also on Windows along with Sphinx
 require_once($IP.'/extensions/TikaMW/TikaMW.php');
+
+// Bug 229698
+$egS5DefaultStyle="custis";
+$egS5Scaled=1;
+$egS5SlideHeadingMark="";
