@@ -38,3 +38,9 @@ require_once($IP.'/extensions/TikaMW/TikaMW.php');
 $egS5DefaultStyle="custis";
 $egS5Scaled=1;
 $egS5SlideHeadingMark="";
+
+
+//Bug 231383
+require_once "$IP/extensions/TextExtracts/TextExtracts.php";
+require_once "$IP/extensions/PageImages/PageImages.php";
+require_once "$IP/extensions/Popups/Popups.php";
