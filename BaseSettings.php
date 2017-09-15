@@ -214,6 +214,11 @@ require_once($IP.'/extensions/LinkAutocomplete/LinkAutocomplete.php');
 require_once($IP.'/extensions/PageSnapshots/PageSnapshots.php');
 require_once($IP.'/extensions/LessUsedCategories/LessUsedCategories.php');
 
+# Page popups
+require_once "$IP/extensions/TextExtracts/TextExtracts.php";
+require_once "$IP/extensions/PageImages/PageImages.php";
+require_once "$IP/extensions/Popups/Popups.php";
+
 # Drafts
 require_once($IP.'/extensions/Drafts/Drafts.php');
 $egDraftsAutoSaveWait = 30;   // half a minute
@@ -371,7 +376,7 @@ $wgUseImageMagick = false;
 $wgGDAlwaysResample = true;
 $wgSVGConverter = 'rsvg';
 
-require_once($IP . '/includes/GlobalFunctions.php');
+require_once($IP.'/includes/GlobalFunctions.php');
 if (wfIsWindows())
 {
     $wgSVGConverterPath = realpath($IP."/../../app/inkscape/");
