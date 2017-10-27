@@ -379,7 +379,7 @@ $wgSVGConverter = 'rsvg';
 require_once($IP.'/includes/GlobalFunctions.php');
 if (wfIsWindows())
 {
-    $wgSVGConverterPath = realpath($IP."/../../app/inkscape/");
+    $wgSVGConverterPath = realpath($IP."/../../app/rsvg/bin/");
     $wgDIAConverterPath = realpath($IP."/../../app/dia/bin/");
     //$wgImageMagickConvertCommand = realpath($IP."/../../app/imagemagick")."/convert.exe";
     // Bug 48216 - Transliterate cyrillic file names of uploaded files
