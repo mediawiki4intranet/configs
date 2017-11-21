@@ -198,7 +198,7 @@ require_once($IP.'/extensions/HttpAuth/HttpAuth.php');
 require_once($IP.'/extensions/AjaxLoader/AjaxLoader.php');
 require_once($IP.'/extensions/RequestMagic/RequestMagic.php');
 require_once($IP.'/extensions/WhoIsWatching/WhoIsWatching.php');
-require_once($IP.'/extensions/Polls/poll.php');
+require_once($IP.'/extensions/Polls/Polls.php');
 require_once($IP.'/extensions/Shortcuts/Shortcuts.php');
 require_once($IP.'/extensions/TopCategoryLinks/TopCategoryLinks.php');
 require_once($IP.'/extensions/RemoveConfidential/RemoveConfidential.php');
