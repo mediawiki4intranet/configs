@@ -213,6 +213,7 @@ require_once($IP.'/extensions/Variables/Variables.php');
 require_once($IP.'/extensions/LinkAutocomplete/LinkAutocomplete.php');
 require_once($IP.'/extensions/PageSnapshots/PageSnapshots.php');
 require_once($IP.'/extensions/LessUsedCategories/LessUsedCategories.php');
+require_once($IP.'/extensions/VisioHandler/VisioHandler.php');
 
 # Page popups
 require_once "$IP/extensions/TextExtracts/TextExtracts.php";
