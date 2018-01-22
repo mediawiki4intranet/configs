@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2016-07-04
+ * Version: 2018-01-22
  *
  * Repo commands:
  *
@@ -625,7 +625,7 @@ Supported revision control systems (vcs/method):
                             }
                             else
                             {
-                                JobControl::print_line_for($path, JobControl::color_fail("Failed to get revision after successful update"));
+                                JobControl::print_line_for($path, JobControl::color_fail("Failed to get revision after successful update: $error"));
                             }
                             JobControl::finish($path);
                         }, $path);
@@ -923,7 +923,7 @@ Supported revision control systems (vcs/method):
     {
         $dest = $cfg['path'];
         JobControl::spawn(
-            "git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1; exit 0", function($code, $out) use($cb)
+            "git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1", function($code, $out) use($cb, $dest)
             {
                 $out = trim($out);
                 if (strlen($out) !== 40)
@@ -1003,6 +1003,35 @@ class JobControl
         self::$lastStr = array();
     }
 
+    static function finish_child($pid, $code)
+    {
+        self::input_from(self::$childProcs[$pid]['out'], self::$childProcs[$pid]);
+        self::input_from(self::$childProcs[$pid]['err'], self::$childProcs[$pid]);
+        if (self::$childProcs[$pid]['echo'])
+        {
+            $n = self::$childProcs[$pid]['name'];
+            if (!empty(self::$lastStr[$n]))
+            {
+                $ok = $code ? 'color_fail' : 'color_ok';
+                self::print_line_for($n, self::$ok(self::$lastStr[$n]));
+            }
+        }
+        $cb = self::$childProcs[$pid]['cb'];
+        if ($cb)
+        {
+            $cb($code, self::$childProcs[$pid]['capture']);
+        }
+        if ($code)
+        {
+            self::$failedTasks[] = array(
+                self::$childProcs[$pid]['name'],
+                self::$childProcs[$pid]['capture'],
+            );
+        }
+        proc_close(self::$childProcs[$pid]['proc']);
+        unset(self::$childProcs[$pid]);
+    }
+
     static function reap_children($needpid = -1)
     {
         $code = 0;
@@ -1013,31 +1042,7 @@ class JobControl
             $code = pcntl_wexitstatus($st);
             if (!empty(self::$childProcs[$pid]))
             {
-                self::input_from(self::$childProcs[$pid]['out'], self::$childProcs[$pid]);
-                self::input_from(self::$childProcs[$pid]['err'], self::$childProcs[$pid]);
-                if (self::$childProcs[$pid]['echo'])
-                {
-                    $n = self::$childProcs[$pid]['name'];
-                    if (!empty(self::$lastStr[$n]))
-                    {
-                        $ok = $code ? 'color_fail' : 'color_ok';
-                        self::print_line_for($n, self::$ok(self::$lastStr[$n]));
-                    }
-                }
-                $cb = self::$childProcs[$pid]['cb'];
-                if ($cb)
-                {
-                    $cb($code, self::$childProcs[$pid]['capture']);
-                }
-                if ($code)
-                {
-                    self::$failedTasks[] = array(
-                        self::$childProcs[$pid]['name'],
-                        self::$childProcs[$pid]['capture'],
-                    );
-                }
-                proc_close(self::$childProcs[$pid]['proc']);
-                unset(self::$childProcs[$pid]);
+                self::finish_child($pid, $code);
             }
         }
         // Spawn queued processes
@@ -1195,6 +1200,18 @@ class JobControl
         );
     }
 
+    static function recheck_children()
+    {
+        foreach (self::$childProcs as $pid => $proc)
+        {
+            $st = proc_get_status($proc['proc']);
+            if (!$st['running'])
+            {
+                self::finish_child($pid, $st['exitcode']);
+            }
+        }
+    }
+
     /**
      * Do one iteration of JobControl main loop
      * @return boolean false when JobControl has nothing to do anymore
@@ -1214,12 +1231,14 @@ class JobControl
             $n[(int)$proc['err']] = $pid;
         }
         error_reporting((E_ALL | E_STRICT) & ~E_WARNING);
+        $ok = true;
         if (stream_select($r, $w, $x, 0, 500000) !== false)
         {
             error_reporting(E_ALL | E_STRICT);
+            $ok = false;
             foreach ($r as $desc)
             {
-                self::input_from($desc, self::$childProcs[$n[(int)$desc]]);
+                $ok = $ok || self::input_from($desc, self::$childProcs[$n[(int)$desc]]);
             }
         }
         else
@@ -1227,6 +1246,10 @@ class JobControl
             error_reporting(E_ALL | E_STRICT);
         }
         self::reap_children();
+        if (!$ok)
+        {
+            self::recheck_children();
+        }
         return true;
     }
 
