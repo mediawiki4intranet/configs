@@ -118,8 +118,8 @@ OPTIONS:
   from the specified file. Default is ./sphinx.wikis.php.
 
 --hostname HOSTNAME
-  Print configuration for wiki family on the host HOSTNAME".($wikis ? "
-  Host names: ".implode(', ', array_keys($wikis)) : '')."
+  Print configuration for wiki family on the host HOSTNAME".($all_hostnames ? "
+  Host names: $all_hostnames" : '')."
   Default host name = $hostname (taken from `hostname` command output)
 
 --style STYLE
