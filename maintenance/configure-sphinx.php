@@ -217,7 +217,7 @@ $init_indexes/etc/init.d/sphinxsearch start
 else
     print "Then reload your Sphinx searchd (Debian: '/etc/init.d/sphinxsearch reload')\n";
 if ($style == 'rt')
-    print "Don't forget to populate new indexes with 'php maintenance.php'\n";
+    print "Don't forget to populate new indexes with 'php maintenance/update.php'\n";
 exit;
 
 function rt_conf($wiki)
