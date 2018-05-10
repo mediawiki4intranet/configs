@@ -6,7 +6,7 @@
  * Maintains distribution index with latest revisions for each subproject
  * for faster updates.
  *
- * Version: 2018-01-22
+ * Version: 2018-05-10
  *
  * Repo commands:
  *
@@ -774,15 +774,19 @@ Supported revision control systems (vcs/method):
     function install_git_ro($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
+        $tag = !empty($cfg['tag']) ? $cfg['tag'] : '';
+        $ref = $tag ?: $branch;
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
         @mkdir($dest, 0777, true);
         JobControl::spawn(
             "git init \"$dest\"".
             " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
-            " ; git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
+            " ; git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$ref\"".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
-            " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
+            ($tag
+                ? " && git --git-dir=\"$dest/.git\" tag --force \"$tag\" FETCH_HEAD"
+                : " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD"),
             $cb, $name);
     }
 
@@ -790,6 +794,8 @@ Supported revision control systems (vcs/method):
     {
         $dest = $cfg['path'];
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
+        $tag = !empty($cfg['tag']) ? $cfg['tag'] : '';
+        $ref = $tag ?: $branch;
         $updateRepo = '';
         if (!empty($cfg['repo']))
         {
@@ -806,9 +812,11 @@ Supported revision control systems (vcs/method):
         }
         JobControl::spawn(
             $updateRepo.
-            " git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$branch\"".
+            " git --git-dir=\"$dest/.git\" fetch --progress --depth=1 origin \"$ref\"".
             " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force FETCH_HEAD".
-            " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD",
+            ($tag
+                ? " && git --git-dir=\"$dest/.git\" tag --force \"$tag\" FETCH_HEAD"
+                : " && git --git-dir=\"$dest/.git\" branch --force \"$branch\" FETCH_HEAD"),
             $cb, $name);
     }
 
@@ -834,6 +842,8 @@ Supported revision control systems (vcs/method):
     function install_git_rw($cfg, $cb, $name)
     {
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
+        $tag = !empty($cfg['tag']) ? $cfg['tag'] : '';
+        $ref = $tag ?: $branch;
         $dest = $cfg['path'];
         $repo = $cfg['repo'];
         $args = " --branch \"$branch\" \"$repo\"";
@@ -841,9 +851,11 @@ Supported revision control systems (vcs/method):
             "git init --bare \"$dest/.git\"".
             " ; git --git-dir=\"$dest/.git\" config core.bare false".
             " ; git --git-dir=\"$dest/.git\" remote add origin \"$repo\"".
-            " ; git --git-dir=\"$dest/.git\" fetch --no-recurse-submodules --progress origin \"$branch\"".
-            " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
-            " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\"",
+            " ; git --git-dir=\"$dest/.git\" fetch --no-recurse-submodules --progress origin --tags".
+            ($tag
+                ? " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" checkout --force \"$tag\""
+                : " && git --git-dir=\"$dest/.git\" branch -f \"$branch\" FETCH_HEAD".
+                " && git --git-dir=\"$dest/.git\" --work-tree=\"$dest\" reset --hard \"$branch\""),
             $cb, $name);
     }
 
@@ -851,6 +863,8 @@ Supported revision control systems (vcs/method):
     {
         $dest = $cfg['path'];
         $branch = !empty($cfg['branch']) ? $cfg['branch'] : 'master';
+        $tag = !empty($cfg['tag']) ? $cfg['tag'] : '';
+        $ref = $tag ?: $branch;
         $repo = $cfg['repo'];
         $git = "git --git-dir=\"$dest/.git\"";
         if (file_exists("$dest/.git/shallow"))
@@ -860,13 +874,14 @@ Supported revision control systems (vcs/method):
             JobControl::spawn(
                 "$git config --replace-all remote.origin.url \"$repo\"".
                 " ; $git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"".
-                " ; $git config \"branch.$branch.remote\" origin".
-                " ; $git config \"branch.$branch.merge\" \"refs/heads/$branch\"".
-                " ; $git fetch --no-recurse-submodules --progress --depth=1000000000 origin".
+                ($tag ? '' :
+                    " ; $git config \"branch.$branch.remote\" origin".
+                    " ; $git config \"branch.$branch.merge\" \"refs/heads/$branch\"").
+                " ; $git fetch --no-recurse-submodules --progress --depth=1000000000 origin --tags".
                 " && $git --work-tree=\"$dest\" checkout --force \"$branch\"",
                 $cb, $name);
         }
-        elseif ((!empty($cfg['rebase']) || !empty($this->localindex['repo'][$cfg['rel_path']]) &&
+        elseif (!$tag && (!empty($cfg['rebase']) || !empty($this->localindex['repo'][$cfg['rel_path']]) &&
             $this->localindex['repo'][$cfg['rel_path']] != $repo) &&
             JobControl::shell_exec("$git rev-parse --verify --quiet \"origin/$branch\""))
         {
@@ -912,9 +927,11 @@ Supported revision control systems (vcs/method):
             // Normal update
             JobControl::spawn(
                 "$git config --replace-all remote.origin.url \"$repo\"".
-                " && $git --work-tree=\"$dest\" fetch --no-recurse-submodules --progress origin".
-                " && $git --work-tree=\"$dest\" checkout \"$branch\"".
-                " && $git --work-tree=\"$dest\" merge \"origin/$branch\"",
+                " && $git --work-tree=\"$dest\" fetch --no-recurse-submodules --progress origin --tags".
+                ($tag
+                    ? " && $git --work-tree=\"$dest\" checkout --force \"$tag\""
+                    : " && $git --work-tree=\"$dest\" checkout \"$branch\"".
+                    " && $git --work-tree=\"$dest\" merge \"origin/$branch\""),
                 $cb, $name);
         }
     }
