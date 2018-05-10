@@ -939,6 +939,11 @@ Supported revision control systems (vcs/method):
     function getrev_async_git_rw($cfg, $cb, $name)
     {
         $dest = $cfg['path'];
+        if (!file_exists("$dest/.git"))
+        {
+            $cb(false, 'Directory not exists');
+            return;
+        }
         JobControl::spawn(
             "git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1", function($code, $out) use($cb, $dest)
             {
@@ -958,6 +963,10 @@ Supported revision control systems (vcs/method):
     function getrev_git_rw($cfg, &$error = NULL)
     {
         $dest = $cfg['path'];
+        if (!file_exists("$dest/.git"))
+        {
+            return '';
+        }
         $r = trim(JobControl::shell_exec("git --git-dir=\"$dest/.git\" rev-parse HEAD 2>&1"));
         if (strlen($r) !== 40)
         {
