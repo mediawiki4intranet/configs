@@ -7,7 +7,7 @@
  * REQUIRES modified MediaWiki import/export mechanism, see MediaWiki4Intranet patch:
  * http://wiki.4intra.net/MW_Import_Export
  *
- * Version: 2016-06-24
+ * Version: 2018-05-22
  *
  * Скрипт для репликации вики-страниц между разными MediaWiki, поддерживает:
  * - Автоматическую репликацию шаблонов и изображений, использованных в статьях
@@ -107,15 +107,26 @@ $BUFSIZE = 0x10000;
 replicator();
 exit;
 
+class UnlinkGuard
+{
+    public $file;
+
+    function __destruct()
+    {
+        unlink($this->file);
+    }
+}
+
 // Main function
 function replicator()
 {
-    global $ignore_since_images, $since_time, $cookieJar,
-        $CurrentTarget, $LastRequestDescription, $HELP_TEXT, $argv;
+    global $ignore_since_images, $since_time, $cookie_jar, $CurrentTarget, $LastRequestDescription, $HELP_TEXT, $argv;
     $ignore_since_images = true;
     $since_time = false;
     $targets = array();
     $config_file = NULL;
+    $cookie_jar = tempnam(sys_get_temp_dir(), 'cookiejar');
+    $unlink_guard = new UnlinkGuard($cookie_jar);
 
     for ($i = 1; $i < count($argv); $i++)
     {
@@ -136,6 +147,10 @@ function replicator()
         {
             $ignore_since_images = false;
         }
+        elseif ($argv[$i] == '--jar')
+        {
+            $cookie_jar = $argv[++$i];
+        }
         elseif ($config_file === NULL)
         {
             $config_file = $argv[$i];
@@ -154,7 +169,6 @@ function replicator()
     }
 
     ob_implicit_flush(TRUE);
-    $cookieJar = dirname(__FILE__)."/cookiejar.txt";
 
     if (!$targets)
     {
@@ -186,14 +200,14 @@ function repl_log($s)
 // Get relative url from wiki $wiki
 function GET($wiki, $url)
 {
-    global $cookieJar, $LastRequestDescription;
+    global $cookie_jar, $LastRequestDescription;
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => $wiki['url'].$url,
         CURLOPT_SSL_VERIFYPEER => 0,
         CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_COOKIEFILE => $cookieJar,
-        CURLOPT_COOKIEJAR => $cookieJar,
+        CURLOPT_COOKIEFILE => $cookie_jar,
+        CURLOPT_COOKIEJAR => $cookie_jar,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS => 10,
         CURLOPT_SSL_VERIFYHOST => 0,
@@ -214,14 +228,14 @@ function GET($wiki, $url)
 // Post relative url to wiki $wiki
 function POST($wiki, $url, $params, $filename = NULL)
 {
-    global $cookieJar, $LastRequestDescription;
+    global $cookie_jar, $LastRequestDescription;
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => $wiki['url'].$url,
         CURLOPT_SSL_VERIFYPEER => 0,
         CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_COOKIEFILE => $cookieJar,
-        CURLOPT_COOKIEJAR => $cookieJar,
+        CURLOPT_COOKIEFILE => $cookie_jar,
+        CURLOPT_COOKIEJAR => $cookie_jar,
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $params,
         CURLOPT_SSL_VERIFYHOST => 0,
