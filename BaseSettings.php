@@ -235,7 +235,10 @@ if (!defined('WIKI4INTRANET_DISABLE_SEMANTIC'))
     require_once($IP.'/extensions/SemanticInternalObjects/SemanticInternalObjects.php');
     require_once($IP.'/extensions/SemanticForms/SemanticForms.php');
     require_once($IP.'/extensions/SemanticFormsInputs/SemanticFormsInputs.php');
-    require_once($IP.'/extensions/SemanticFormsSelect/SemanticFormsSelect.php');
+    if (file_exists($IP.'/extensions/SemanticFormsSelect/SemanticFormsSelect.php'))
+        require_once($IP.'/extensions/SemanticFormsSelect/SemanticFormsSelect.php');
+    else
+        require_once($IP.'/extensions/SemanticFormsSelect/SemanticFormsSelect.hooks.php');
     require_once($IP.'/extensions/SemanticResultFormats/SemanticResultFormats.php');
     require_once($IP.'/extensions/Arrays/Arrays.php');
     require_once($IP.'/extensions/Loops/Loops.php');
