@@ -192,7 +192,7 @@ $contents";
             $filename = substr($fileurl, strrpos($fileurl, '/')+1);
             $page .= "<upload><timestamp>$max_ts</timestamp>$max_author".
                 "<comment /><filename>".htmlspecialchars($filename)."</filename>".
-                "<src sha1=\"$sha1\">multipart://$filename</src>".
+                "<src sha1=\"$sha1\">multipart://".htmlspecialchars($filename)."</src>".
                 "<size>$size</size></upload></page>";
             $uploads[] = array(
                 'fp'    => $tmpfp,
