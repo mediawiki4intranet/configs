@@ -189,7 +189,7 @@ $contents";
                     $max_author = $m[0];
                 }
             }
-            $filename = substr($fileurl, strrpos($fileurl, '/')+1);
+            $filename = preg_replace('#^[^:]*://#', '', $fileurl);
             $page .= "<upload><timestamp>$max_ts</timestamp>$max_author".
                 "<comment /><filename>".htmlspecialchars($filename)."</filename>".
                 "<src sha1=\"$sha1\">multipart://".htmlspecialchars($filename)."</src>".
