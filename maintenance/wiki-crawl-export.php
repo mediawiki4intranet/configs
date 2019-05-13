@@ -155,9 +155,9 @@ $contents";
         $ts = msgw("Found file: $file. Downloading file page...");
         $filepage = curlrun("$url/index.php?title=File:".urlencode($file));
         done(strlen($filepage), $ts);
-        if (preg_match('#<table[^<>]*class=[\'"]?filehistory.*?<a[^<>]*href=[\'"]?([^\'"<>\s]+)#is', $filepage, $m))
+        if (preg_match('#<table[^<>]*class=[\'"]?[^\'"]*filehistory.*?<a[^<>]*href=[\'"]?([^\'"<>\s]+)#is', $filepage, $m))
         {
-            $fileurl = $m[1];
+            $fileurl = htmlspecialchars_decode($m[1]);
             if ($fileurl{0} == '/')
             {
                 $pos = strpos($url, '://')+3;
