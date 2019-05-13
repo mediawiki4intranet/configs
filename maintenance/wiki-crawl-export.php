@@ -2,7 +2,7 @@
 <?php
 
 $help = "MW4Intranet file export helper for stock MediaWikis
-(c) 2011, Vitaliy Filippov
+(c) 2011+, Vitaliy Filippov
 USAGE:
   php $argv[0] [OPTIONS] [pages...]
 
@@ -14,7 +14,7 @@ USAGE:
   See http://wiki.4intra.net/MW_Import_Export for the description of
   file import/export MediaWiki patch.
 VERSION:
-  2010-03-15
+  2019-05-14
   PHP 5 is required
   curl-env-proxy.php is required to use proxy environment variables
   (http_proxy, http_no_proxy)
