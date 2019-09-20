@@ -239,6 +239,7 @@ index $wiki[name]
     blend_chars     = _, -, &, +, @, $
     morphology      = stem_enru
     min_word_len    = 2
+    index_exact_words = 1
 }
 
 ";
