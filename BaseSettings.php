@@ -348,7 +348,6 @@ $wgWikilogPagerDateFormat = 'ymd hms';
 $wgWikilogMaxCommentSize = 0x7FFFFFFF;
 $wgWikilogDefaultNotCategory = 'Скрытые';
 $wgWikilogSearchDropdowns = true;
-$wgWikilogCommentsOnItemPage = true;
 $wgWikilogNumComments = 100;
 $wgWikilogExpensiveLimit = 100;
 # Enable Wikilog-style threaded talks pages everywhere
