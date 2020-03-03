@@ -224,6 +224,8 @@ require_once "$IP/extensions/Popups/Popups.php";
 require_once($IP.'/extensions/Drafts/Drafts.php');
 $egDraftsAutoSaveWait = 30;   // half a minute
 
+require_once($IP.'/extensions/DrawioEditor/DrawioEditor.php');
+
 # FlvHandler
 require_once($IP.'/extensions/FlvHandler/FlvHandler.php');
 
