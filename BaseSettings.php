@@ -2,7 +2,7 @@
 
 // MediaWiki4Intranet configuration base for all MW installations (UNIX, Windows)
 // Contains many useful configuration hints
-// (c) Stas Fomin, Vitaliy Filippov 2008-2013
+// (c) Stas Fomin, Vitaliy Filippov 2008-2020
 
 setlocale(LC_ALL, 'ru_RU.UTF-8');
 setlocale(LC_NUMERIC, 'C');

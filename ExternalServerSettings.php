@@ -1,7 +1,7 @@
 <?php
 
 // MediaWiki4Intranet configuration base for external (WWW) installations
-// (c) Stas Fomin, Vitaliy Filippov 2008-2013
+// (c) Stas Fomin, Vitaliy Filippov 2008-2020
 
 require_once(dirname(__FILE__).'/ServerSettings.php');
 
