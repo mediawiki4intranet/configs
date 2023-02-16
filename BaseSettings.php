@@ -214,6 +214,7 @@ require_once($IP.'/extensions/LinkAutocomplete/LinkAutocomplete.php');
 require_once($IP.'/extensions/PageSnapshots/PageSnapshots.php');
 require_once($IP.'/extensions/LessUsedCategories/LessUsedCategories.php');
 require_once($IP.'/extensions/VisioHandler/VisioHandler.php');
+wfLoadExtension('SwaggerDoc');
 
 # Page popups
 require_once "$IP/extensions/TextExtracts/TextExtracts.php";
